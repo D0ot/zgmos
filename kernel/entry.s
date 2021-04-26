@@ -1,5 +1,8 @@
-.secion .text.start
+.section .text.start
 .global _start
 _start:
-  j _start
+  jal main
+_loop:
+  j  _loop
+  
 

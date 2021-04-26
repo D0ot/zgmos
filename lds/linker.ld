@@ -17,7 +17,7 @@ PHDRS
 SECTIONS
 {
   PROVIDE(_text_start = ABSOLUTE(.) );
-  .text
+  .text :
   {
     KEEP( *(.text.start) )
     *(.text .text.*)
@@ -26,8 +26,18 @@ SECTIONS
 
   . = ALIGN(4096);
 
+  PROVIDE(_rodata_start = ABSOLUTE(.) );
+  .rodata :
+  {
+    *.(.rdata)
+    *.(.rodata .rodata.*)
+  }
+  PROVIDE(_rodata_end = ABSOLUTE(.) );
+
+  . = ALIGN(4096);
+
   PROVIDE(_data_start = ABSOLUTE(.) );
-  .data
+  .data :
   {
     *(.data .data.*)
   } >ram AT>ram :ram_init
@@ -36,9 +46,10 @@ SECTIONS
   . = ALIGN(4096);
   
   PROVIDE(_bss_start = ABSOLUTE(.) );
-  .bss:
+  .bss :
   {
     *(.bss .bss.*)
+    *(.COMMON)
   } >ram AT>ram :ram
   PROVIDE(_bss_end = ABSOLUTE(.) );
 }
