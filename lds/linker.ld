@@ -31,7 +31,7 @@ SECTIONS
   {
     *.(.rdata)
     *.(.rodata .rodata.*)
-  }
+  } >ram AT>ram :ram_ro
   PROVIDE(_rodata_end = ABSOLUTE(.) );
 
   . = ALIGN(4096);

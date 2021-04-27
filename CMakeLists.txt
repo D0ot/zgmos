@@ -24,7 +24,6 @@ add_compile_flags(LD
         -Wl,--no-whole-archive
         -Wl,--end-group
         -Wl,-EL
-        -Wl,--no-relax
         -T ${proj_root}/lds/linker.ld
         )
 

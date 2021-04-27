@@ -1,0 +1,3 @@
+[submodule "bootloader/SBI/rustsbi"]
+	path = bootloader/SBI/rustsbi
+	url = git@github.com:luojia65/rustsbi.git
