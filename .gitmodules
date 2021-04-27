@@ -1,3 +1,6 @@
 [submodule "bootloader/SBI/rustsbi"]
 	path = bootloader/SBI/rustsbi
 	url = git@github.com:luojia65/rustsbi.git
+[submodule "tools/kflash.py"]
+	path = tools/kflash.py
+	url = https://github.com/kendryte/kflash.py.git
