@@ -32,6 +32,8 @@ add_compile_flags(BOTH
         -mcmodel=medany
         -mabi=lp64d
         -march=rv64gc
+        -nostdlib
+        -ffreestanding
         -fno-common
         -ffunction-sections
         -fdata-sections
