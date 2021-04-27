@@ -53,4 +53,9 @@ include(${proj_root}/cmake/fix-9985.cmake)
 add_executable(${PROJECT_NAME} "./kernel/entry.s" "./kernel/main.c")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --output-format=binary --strip-all ${CMAKE_BINARY_DIR}/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
+        DEPENDS ${PROJECT_NAME}
+        COMMENT "Generating .bin file ...")
+
 
