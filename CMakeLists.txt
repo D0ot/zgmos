@@ -58,3 +58,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} --output-format=binary --strip-all ${CMAKE_BINARY_DIR}/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
         DEPENDS ${PROJECT_NAME}
         COMMENT "Generating .bin file ...")
+
+message(STATUS "Toolchain Infomation:")
+message(STATUS "C compiler   : ${CMAKE_C_COMPILER}")
+message(STATUS "CXX compiler : ${CMAKE_CXX_COMPILER}")
+message(STATUS "LINKER       : ${CMAKE_LINKER}")
+message(STATUS "C fLags      : ${CMAKE_C_FLAGS}")
+message(STATUS "CXX flags    : ${CMAKE_CXX_FLAGS}")
