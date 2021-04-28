@@ -19,3 +19,9 @@ see more usages in Makefile
 3. `cargo install just`
 4. `cargo install cargo-binutils`
 5. `cd ./bootloader/SBI/rustsbi/platform/<platform>` and `just build`
+
+## Debug Guide
+
+1. `make qemu-build`
+2. `make qemung-debug`
+3. `make gdb`
