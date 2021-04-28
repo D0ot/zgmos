@@ -1,9 +1,10 @@
 OUTPUT_ARCH("riscv")
 ENTRY(_start)
+PROVIDE(_kernel_entry = 0x80200000 );
 
 MEMORY
 {
-  ram (wxa!ri) : ORIGIN = 0x80000000, LENGTH = (6*1024*1024)
+  ram (wxa!ri) : ORIGIN = 0x80200000, LENGTH = (4*1024*1024)
   ram_nocahce (axa!ri) : ORIGIN = 0x40000000, LENGTH = (6*1024*1024)
 }
 
@@ -13,6 +14,7 @@ PHDRS
   ram_init  PT_LOAD;
   ram       PT_NULL;
 }
+
 
 SECTIONS
 {

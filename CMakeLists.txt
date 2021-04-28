@@ -8,6 +8,7 @@ set_property(GLOBAL PROPERTY PROJ_ROOT "${CMAKE_CURRENT_LIST_DIR}")
 get_property(proj_root GLOBAL PROPERTY PROJ_ROOT)
 message(STATUS "Global property PROJ_ROOT is set to ${proj_root}")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 include(${proj_root}/cmake/macros.cmake)
 include(${proj_root}/cmake/toolchain.cmake)
 include(${proj_root}/cmake/buildtype.cmake)
