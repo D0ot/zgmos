@@ -1,8 +1,6 @@
-
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 
 cmake_minimum_required(VERSION 3.1)
-project(zgmos C ASM)
 
 cmake_policy(SET CMP0054 NEW)
 
@@ -13,6 +11,8 @@ message(STATUS "Global property PROJ_ROOT is set to ${proj_root}")
 include(${proj_root}/cmake/macros.cmake)
 include(${proj_root}/cmake/toolchain.cmake)
 include(${proj_root}/cmake/buildtype.cmake)
+
+project(zgmos C ASM)
 
 add_compile_flags(LD
         -nostartfiles
@@ -57,5 +57,3 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} --output-format=binary --strip-all ${CMAKE_BINARY_DIR}/${PROJECT_NAME} ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin
         DEPENDS ${PROJECT_NAME}
         COMMENT "Generating .bin file ...")
-
-
