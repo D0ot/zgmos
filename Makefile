@@ -32,6 +32,7 @@ k210-build:
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210} ./build/; \
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210}.${BIN_SUFFIX} ./build/; \
 	fi
+	
 
 
 qemu-build:
@@ -64,6 +65,13 @@ QEMU_OPTIONS_NG += "--nographic"
 qemung-debug:
 	echo "Starting qemu debug, nographic"
 	qemu-system-riscv64 ${QEMU_OPTIONS_NG}
+
+# TODO
+gdb:
+	riscv64-unknown-elf-gdb -s ./build/zgmos -x ./scripts/gdbinit
+
+	
+
 
 sbi-build:
 	@if [ ! -f "${SBI_LATEST_DIR}/${SBI_NAME_K210}" ]; then \
