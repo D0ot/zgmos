@@ -31,8 +31,8 @@ add_compile_flags(LD
 # C Flags Settings
 add_compile_flags(BOTH
         -mcmodel=medany
-        -mabi=lp64d
-        -march=rv64gc
+        -mabi=lp64f
+        -march=rv64imafc
         -nostdlib
         -ffreestanding
         -fno-common
