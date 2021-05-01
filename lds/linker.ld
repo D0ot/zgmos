@@ -8,6 +8,8 @@ MEMORY
   ram_nocahce (axa!ri) : ORIGIN = 0x40000000, LENGTH = (6*1024*1024)
 }
 
+PROVIDE(_ram_end = ORIGIN(ram) + LENGTH(ram) );
+
 PHDRS
 {
   ram_ro    PT_LOAD;
@@ -18,6 +20,7 @@ PHDRS
 
 SECTIONS
 {
+  PROVIDE(_kernel_start = ABSOLUTE(.) );
   PROVIDE(_text_start = ABSOLUTE(.) );
   .text :
   {
@@ -54,4 +57,5 @@ SECTIONS
     *(.COMMON)
   } >ram AT>ram :ram
   PROVIDE(_bss_end = ABSOLUTE(.) );
+  PROVIDE(_kernel_end = ABSOLUTE(.) );
 }
