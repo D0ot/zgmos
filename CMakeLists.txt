@@ -45,13 +45,12 @@ add_compile_flags(BOTH
         -fsingle-precision-constant
         -O0
         -ggdb
-        -Wall
-        -Werror=all)
+        -Wall)
 
 add_compile_flags(C -std=gnu11 -Wno-pointer-to-int-cast)
 include(${proj_root}/cmake/fix-9985.cmake)
 
-add_executable(${PROJECT_NAME} "./kernel/entry.s" "./kernel/main.c")
+add_executable(${PROJECT_NAME} "./kernel/entry.s" "./kernel/main.c" "./kernel/kustd.c" "./kernel/utils.c" "./kernel/earlylog.c" "./kernel/bootinfo.c")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

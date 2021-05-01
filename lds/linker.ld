@@ -57,5 +57,6 @@ SECTIONS
     *(.COMMON)
   } >ram AT>ram :ram
   PROVIDE(_bss_end = ABSOLUTE(.) );
+  . = ALIGN(4096);
   PROVIDE(_kernel_end = ABSOLUTE(.) );
 }

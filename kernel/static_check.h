@@ -3,8 +3,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <assert.h>
 
-// This file is currently enpty
+static_assert( (sizeof(uintptr_t) == sizeof(long) ), "sizeof(uintptr_t) != sizeof(long)");
 
 #endif // __STATIC_CHECK_H_
 

@@ -1,17 +1,13 @@
-#include <stdio.h>
-#include "static_check.h"
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include "sbi.h"
-
-int add(int a, int b) {
-  return a + b;
-}
+#include "static_check.h"
+#include "kustd.h"
+#include "earlylog.h"
+#include "bootinfo.h"
 
 int main(void) {
-  int a = add(1, 2);
-  if(a == 1) {
-    add(1, 2);
-  }
-  sbi_console_putchar('@');
-  while(1);
+  print_bootinfo();
   return 0;
 }

@@ -6,50 +6,46 @@
 #include <stddef.h>
 #include <stdint.h>
 
-const long SBI_SUCCESS = 0;
-const long SBI_ERR_FAILED = -1;
-const long SBI_ERR_NOT_SUPPORTED  = -2;
-const long SBI_ERR_INVALID_PARAM = -3;
-const long SBI_ERR_DENIED = -4;
-const long SBI_ERR_INVALID_ADDRESS = -5;
-const long SBI_ERR_ALREADY_AVALIABLE = -6;
+static const long SBI_SUCCESS = 0;
+static const long SBI_ERR_FAILED = -1;
+static const long SBI_ERR_NOT_SUPPORTED  = -2;
+static const long SBI_ERR_INVALID_PARAM = -3;
+static const long SBI_ERR_DENIED = -4;
+static const long SBI_ERR_INVALID_ADDRESS = -5;
+static const long SBI_ERR_ALREADY_AVALIABLE = -6;
 
-const int32_t SBI_EID_LEGACY_SET_TIMER = 0;
-const int32_t SBI_EID_LEGACY_CONSOLE_PUTCHAR = 1;
-const int32_t SBI_EID_LEGACY_CONSOLE_GETCHAR = 2;
-const int32_t SBI_EID_LEGACY_CLEAR_IPI = 3;
-const int32_t SBI_EID_LEGACY_SNED_IPI = 4;
-const int32_t SBI_EID_LEGACY_REMOTE_FENCE_I = 5;
-const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA = 6;
-const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA_ASID = 7;
-const int32_t SBI_EID_LEGACY_SYSTEM_SHUTDOWN = 8;
-
-
-const int32_t SBI_EID_BASE = 0x10;
-const int32_t SBI_BASE_FID_SPEC_VERSION = 0;
-const int32_t SBI_BASE_FID_IMPL_ID = 1;
-const int32_t SBI_BASE_FID_IMPL_VERSION = 2;
-const int32_t SBI_BASE_FID_PROBE_SBI = 3;
-const int32_t SBI_BASE_FID_GET_MACHINE_VENDOR_ID = 4;
-const int32_t SBI_BASE_FID_GET_MACHINE_ARCHITECTURE_ID = 5;
-const int32_t SBI_BASE_FID_GET_MACHINE_IMPL_ID = 6;
+static const int32_t SBI_EID_LEGACY_SET_TIMER = 0;
+static const int32_t SBI_EID_LEGACY_CONSOLE_PUTCHAR = 1;
+static const int32_t SBI_EID_LEGACY_CONSOLE_GETCHAR = 2;
+static const int32_t SBI_EID_LEGACY_CLEAR_IPI = 3;
+static const int32_t SBI_EID_LEGACY_SNED_IPI = 4;
+static const int32_t SBI_EID_LEGACY_REMOTE_FENCE_I = 5;
+static const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA = 6;
+static const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA_ASID = 7;
+static const int32_t SBI_EID_LEGACY_SYSTEM_SHUTDOWN = 8;
 
 
-const int32_t SBI_EID_TIMER = 0x54494D45;
-const int32_t SBI_EID_IPI = 0x735049;
-const int32_t SBI_EID_RFENCE = 0x52464E43;
-const int32_t SBI_EID_HSM = 0x48534D;
-const int32_t SBI_EID_SRST = 0x53525354;
+static const int32_t SBI_EID_BASE = 0x10;
+static const int32_t SBI_BASE_FID_SPEC_VERSION = 0;
+static const int32_t SBI_BASE_FID_IMPL_ID = 1;
+static const int32_t SBI_BASE_FID_IMPL_VERSION = 2;
+static const int32_t SBI_BASE_FID_PROBE_SBI = 3;
+static const int32_t SBI_BASE_FID_GET_MACHINE_VENDOR_ID = 4;
+static const int32_t SBI_BASE_FID_GET_MACHINE_ARCHITECTURE_ID = 5;
+static const int32_t SBI_BASE_FID_GET_MACHINE_IMPL_ID = 6;
+
+
+static const int32_t SBI_EID_TIMER = 0x54494D45;
+static const int32_t SBI_EID_IPI = 0x735049;
+static const int32_t SBI_EID_RFENCE = 0x52464E43;
+static const int32_t SBI_EID_HSM = 0x48534D;
+static const int32_t SBI_EID_SRST = 0x53525354;
 
 
 typedef struct sbiret_tag {
   long error;
   long value;
 } sbiret;
-
-const uintptr_t SBI_SET_TIMER = 0;
-const uintptr_t SBI_CONSOLE_PUTCHAR = 1;
-const uintptr_t SBI_CONSOLE_GETCHAR = 2;
 
 static inline sbiret sbicall(int32_t eid, int32_t fid, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
   register uintptr_t a0 asm ("a0") = (arg0); 
@@ -82,7 +78,7 @@ static inline void sbi_console_putchar(int ch) {
 }
 
 static inline int sbi_sonsole_getchar(int ch) {
-  return SBICALL0(SBI_CONSOLE_GETCHAR, 0).error;
+  return SBICALL0(SBI_EID_LEGACY_CONSOLE_GETCHAR, 0).error;
 }
 
 

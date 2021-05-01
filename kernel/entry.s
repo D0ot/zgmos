@@ -9,7 +9,10 @@ startup_stack:
 _start:
   la sp, startup_stack
   call main
+
+# following is dummy code
 _loop:
+  li t0, 1
   j  _loop
 
 
