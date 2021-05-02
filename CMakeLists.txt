@@ -50,7 +50,9 @@ add_compile_flags(BOTH
 add_compile_flags(C -std=gnu11 -Wno-pointer-to-int-cast)
 include(${proj_root}/cmake/fix-9985.cmake)
 
-add_executable(${PROJECT_NAME} "./kernel/entry.s" "./kernel/main.c" "./kernel/kustd.c" "./kernel/utils.c" "./kernel/earlylog.c" "./kernel/bootinfo.c")
+file(GLOB source_files "${proj_root}/kernel/*.c" "${proj_root}/kernel/*.s")
+
+add_executable(${PROJECT_NAME} ${source_files})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD

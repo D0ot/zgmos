@@ -1,5 +1,6 @@
 #include "utils.h"
 #include "kustd.h"
+#include "stdbool.h"
 
 uint8_t strmatch(const char *s1, const char *s2, uint64_t count)
 {
@@ -153,4 +154,8 @@ uint64_t align_to(uint64_t x, uint64_t a)
   {
     return x;
   }
+}
+
+bool is_power_of_2(uint64_t n) {
+  return !((n-1) & (n));
 }

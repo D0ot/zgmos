@@ -27,6 +27,7 @@ int v_sprintf(char *str, const char *format, va_list ap)
         strcpy(str, buf);
         format += 2;
         str += strlen(buf);
+        break;
  
       case 'x': // integer, hex form
         utoa(va_arg(ap, unsigned long), buf, 16);

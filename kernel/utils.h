@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 // if match, return 1
 // if not match, return 0
@@ -26,5 +27,10 @@ void swap(char *x, char *y);
 int abs(int value);
 
 uint64_t align_to(uint64_t x, uint64_t a);
+
+bool is_power_of_2(uint64_t n);
+
+#define POWER_OF_2(p) (((uint64_t)1 << (p)))
+
 
 #endif
