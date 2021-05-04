@@ -12,6 +12,7 @@
 
 int main(void) {
   print_bootinfo();
+  // initialize the physical memory allocator
   pmem_init(KERNEL_END, RAM_END);
   return 0;
 }
