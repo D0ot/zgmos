@@ -15,12 +15,7 @@ void pmem_init(void *pmem_start, void *pmem_end) {
   buddy_init(pmem_start, pmem_end);
 }
 
-// the page number it tries to get is POWER_OF_2(order);
-// NULL if failed.
 void* pmem_alloc(int64_t order) {
-  if(!is_power_of_2(order)) {
-    KERNEL_PANIC();
-  }
   void *ret = buddy_alloc(order);
   return ret;
 }

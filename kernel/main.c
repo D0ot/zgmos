@@ -11,13 +11,12 @@
 #include "slab.h"
 
 
-
 int main(void) {
+  // Print LOGO.
   print_bootinfo();
-  // initialize the physical memory allocator
+  // initialize the physical memory allocator.
   pmem_init(KERNEL_END, RAM_END);
-
-  // comsumes 4 page from physical memory
+  // initialize meta slab object comsumes some physical pages
   slab_static_init();
 
  return 0;

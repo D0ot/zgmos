@@ -11,16 +11,17 @@
 
 slab_t meta_slab;
 
-void slab_create_ex(slab_t *slab, void *page_addr, int size_obj, int page_count) {
+void slab_create_ex(slab_t *slab, void *page_addr, int size_obj, int order) {
   slab->objs = page_addr;
   slab->pg = page_addr;
-  slab->total_obj = (page_count * PAGE_SIZE) / size_obj;
+  slab->total_obj = (POWER_OF_2(order) * PAGE_SIZE) / size_obj;
   slab->free_obj = slab->total_obj;
   slab->size_obj = size_obj;
+  slab->order = order;
 
   void *ptr = page_addr;
   for(;;) {
-    if(ptr + size_obj < (void*)page_addr + PAGE_SIZE) {
+    if(ptr + size_obj < (void*)page_addr + PAGE_SIZE * POWER_OF_2(order)) {
       SLAB_SET_NEXT(ptr, ptr+size_obj);
       ptr = ptr + size_obj;
     } else {
@@ -31,20 +32,28 @@ void slab_create_ex(slab_t *slab, void *page_addr, int size_obj, int page_count)
 }
 
 // size_obj == size of object
-slab_t *slab_create(int size_obj, int page_count) {
-  slab_t *slab = slab_alloc(&meta_slab);
-  void *pg = pmem_alloc(page_count);
-  if(pg && slab) {
-    slab_create_ex(slab, pg, size_obj, page_count);
-    return slab;
-  } else {
+slab_t *slab_create_static(int size_obj, int order) {
+  return slab_create(&meta_slab, size_obj, order);
+}
+
+// pslab = parent slab
+slab_t *slab_create(slab_t *pslab, int size_obj, int order) {
+  slab_t *slab = slab_alloc(pslab);
+  if(slab == NULL) {
     return NULL;
   }
+  void *pg = pmem_alloc(order);
+  if(pg == NULL) {
+    slab_free(pslab, slab);
+    return NULL;
+  }
+  slab_create_ex(slab, pg, size_obj, order);
+  return slab;
 }
 
 bool slab_contain(slab_t *slab, void* obj_addr) {
   return (slab->pg <= obj_addr) &&
-    (obj_addr  < slab->pg + PAGE_SIZE);
+    (obj_addr  < slab->pg + PAGE_SIZE * (slab->order));
 }
 
 void *slab_alloc(slab_t *slab) {
@@ -92,18 +101,22 @@ bool slab_empty(slab_t *slab) {
   return slab->total_obj == slab->free_obj;
 }
 
-void slab_destory(slab_t *slab) {
+void slab_destory(slab_t *pslab, slab_t *slab) {
   if(slab_empty(slab)) {
     pmem_free(slab->pg);
   } else {
     KERNEL_PANIC();
   }
-  slab_free(&meta_slab, (void*)slab);
+  slab_free(pslab, (void*)slab);
+}
+
+void slab_destory_static(slab_t *slab) {
+  slab_destory(&meta_slab, slab);
 }
 
 void slab_static_init() {
-  void *pg = pmem_alloc(2);
-  slab_create_ex(&meta_slab, pg, sizeof(slab_t), POWER_OF_2(2));
+  void *pg = pmem_alloc(SLAB_STATIC_PAGE_ORDER);
+  slab_create_ex(&meta_slab, pg, sizeof(slab_t), POWER_OF_2(SLAB_STATIC_PAGE_ORDER));
 }
 
 void slab_static_deinit() {
@@ -134,7 +147,7 @@ void slab_test() {
 void slab_test_case(int obj_size) {
   void **pa = pmem_alloc(4);
   int max_index = 0;
-  slab_t *slab = slab_create(obj_size, 1);
+  slab_t *slab = slab_create_static(obj_size, 1);
   printf("SLAB TEST SIZE START >>>>>>>>>>>>>>>>>>>>>>>>>>%d\n", obj_size);
   printf("BEFORE || free : %d\n", slab_get_free_obj(slab));
   printf("BEFORE || total : %d\n", slab_get_total_obj(slab));
@@ -159,7 +172,7 @@ void slab_test_case(int obj_size) {
   printf("AFTER || free : %d\n", slab_get_free_obj(slab));
   printf("AFTER || total : %d\n", slab_get_total_obj(slab));
 
-  slab_destory(slab);
+  slab_destory_static(slab);
   printf("SLAB TEST SIZE END <<<<<<<<<<<<<<<<<<<<<<<<<<<<< %d\n", obj_size);
   pmem_free(pa);
 }
