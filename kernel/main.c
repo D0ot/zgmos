@@ -8,11 +8,17 @@
 #include "earlylog.h"
 #include "bootinfo.h"
 #include "pmem.h"
+#include "slab.h"
+
 
 
 int main(void) {
   print_bootinfo();
   // initialize the physical memory allocator
   pmem_init(KERNEL_END, RAM_END);
-  return 0;
+
+  // comsumes 4 page from physical memory
+  slab_static_init();
+
+ return 0;
 }

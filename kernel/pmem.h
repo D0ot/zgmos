@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 void pmem_init(void *pmem_start, void *pmem_end);
-void* pmem_alloc(int64_t page_count);
+void* pmem_alloc(int64_t order);
 void pmem_free(void *pa);
-void peme_debug_stub();
+void pmem_debug_stub();
 
 #endif

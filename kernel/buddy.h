@@ -4,7 +4,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define PAGE_SIZE  (4096)
 #define MAX_BLOCK_POW  (12)
 
 void buddy_init(void *pa_start, void *pa_end);

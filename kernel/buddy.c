@@ -3,6 +3,7 @@
 #include "buddy.h"
 #include "utils.h"
 #include "earlylog.h"
+#include "defs.h"
 
 
 // next is the next block with the same pow
