@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "earlylog.h"
 #include "defs.h"
+#include "panic.h"
 
 
 // next is the next block with the same pow
@@ -13,7 +14,14 @@ typedef struct buddy_block_tag{
   // additional data
   void *adat;
   uint8_t pow;
+  // used flag, current 0 and 1 are valid value
+  // 0 for free
+  // 1 for used
+  uint8_t used;
 } buddy_block;
+
+static const uint8_t BUDDY_BLOCK_USED = 1;
+static const uint8_t BUDDY_BLOCK_FREE = 0;
 
 
 struct buddy_system {
@@ -29,7 +37,6 @@ struct buddy_system {
   uint64_t total_pages;
   int64_t indices[MAX_BLOCK_POW];
 } bs;
-
 
 
 uint64_t buddy_get_self_memreq() {
@@ -70,6 +77,36 @@ void *buddy_aux_index2addr(uint64_t index) {
   return bs.managed_start + index * PAGE_SIZE;
 }
 
+
+void buddy_set_used_index(int64_t index) {
+  int8_t pow = bs.buddies[index].pow;
+  for(int64_t i = 0; i < POWER_OF_2(pow); ++i) {
+    bs.buddies[index + i].used = BUDDY_BLOCK_USED;
+  }
+}
+
+void buddy_clear_used(int64_t index) {
+  int8_t pow = bs.buddies[index].pow;
+  for(int64_t i = 0; i < POWER_OF_2(pow); ++i) {
+    bs.buddies[index + i].used = BUDDY_BLOCK_FREE;
+  }
+}
+
+int8_t buddy_get_used(int64_t index) {
+  int8_t pow = bs.buddies[index].pow;
+  uint8_t used = bs.buddies[index].used;
+  for(int64_t i = 0; i < POWER_OF_2(pow); ++i) {
+    if(used != bs.buddies[index + i].used) {
+      // unconsistent used state, there must be some bugs.
+      // could be a bug in buddy allocator
+      // could be a unexpected memory write to bs.buddies
+      KERNEL_PANIC();
+    }
+  }
+  return used;
+}
+
+
 void buddy_init(void *pa_start, void *pa_end) {
   buddy_aux_data_init(pa_start, pa_end);
   uint64_t cur_page_pos = 0;
@@ -80,6 +117,11 @@ void buddy_init(void *pa_start, void *pa_end) {
       bs.indices[i] = cur_page_pos;
       cur_page_pos += POWER_OF_2(i);
     }
+  }
+
+  // set all pages to free state
+  for(int64_t i = 0; i < bs.total_pages; ++i) {
+    bs.buddies[i].used = BUDDY_BLOCK_FREE;
   }
 }
 
@@ -121,6 +163,7 @@ int64_t buddy_alloc_index(uint8_t pow) {
     ret = bs.indices[pow];
     bs.indices[pow] = bs.buddies[ret].next;
   }
+  buddy_set_used_index(ret);
   return ret;
 }
 
@@ -141,6 +184,7 @@ bool buddy_aux_mergeable(int64_t index1, int64_t index2, int8_t pow) {
 int8_t buddy_free_index(int64_t index) {
   int64_t free_block = index;
   int8_t ret = bs.buddies[index].pow;
+  buddy_clear_used(index);
 
   for(;;) {
     int8_t pow = bs.buddies[free_block].pow;
@@ -175,7 +219,7 @@ int8_t buddy_free_index(int64_t index) {
         } else {
           bs.buddies[iter_pre].next = bs.buddies[iter].next;
         }
-        
+
         bs.buddies[iter].pow = pow + 1;
         free_block = iter;
         continue;
@@ -188,9 +232,7 @@ int8_t buddy_free_index(int64_t index) {
       }
 
       // can not be merged, add it to indices list
-      //
-
-      bs.buddies[free_block].next = bs.buddies[iter].next; 
+      bs.buddies[free_block].next = bs.buddies[iter].next;
       bs.buddies[iter].next = free_block;
       break;
     }
@@ -202,6 +244,10 @@ int8_t buddy_free_index(int64_t index) {
 
 void buddy_free(void *pa) {
   uint64_t index = buddy_aux_addr2index(pa);
+  if(buddy_get_used(index) == BUDDY_BLOCK_FREE) {
+    // try to free an unused memory block
+    KERNEL_PANIC();
+  }
   uint8_t p = buddy_free_index(index);
   bs.free_pages += POWER_OF_2(p);
 }
@@ -210,23 +256,28 @@ uint64_t buddy_get_free_pages_count() {
   return bs.free_pages;
 }
 
-uint64_t buddy_get_total_pages_count() { 
+uint64_t buddy_get_total_pages_count() {
   return bs.total_pages;
 }
 
 
-void buddy_set_adat(void *pa, void *adat) {
-  int64_t index = buddy_aux_addr2index(pa);
+void buddy_set_adat_index(int64_t index, void *adat) {
   int8_t pow = bs.buddies[index].pow;
-  
   for(int i = 0; i < POWER_OF_2(pow); ++i) {
     bs.buddies[index + i].adat = adat;
   }
 }
 
-void *buddy_get_adat(void *pa) {
-  int64_t index = buddy_aux_addr2index(pa);
+void *buddy_get_adat_index(int64_t index) {
   return bs.buddies[index].adat;
+}
+
+void buddy_set_adat(void *pa, void *adat) {
+  buddy_set_adat_index(buddy_aux_addr2index(pa), adat);
+}
+
+void *buddy_get_adat(void *pa) {
+  return buddy_get_adat_index(buddy_aux_addr2index(pa));
 }
 
 void buddy_debug_print() {
@@ -237,4 +288,29 @@ void buddy_debug_print() {
       printf("i = %d, pow = %d, next = %l;\n", i, (int)bs.buddies[bs.indices[i]].pow, (uint64_t)bs.buddies[bs.indices[i]].next);
     }
   }
+}
+
+void buddy_test() {
+  void *pa[100];
+  printf("BUDDY ALLOCATOR TEST >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  buddy_debug_print();
+  int max_iter = INT32_MAX;
+  int random_order[] = {0,1,2,5,4,3,1,2,0,1,0,2,3,0,1,4};
+  int random_order_size = sizeof(random_order) / sizeof(random_order[0]);
+  for(int i = 0; i < 100; ++i) {
+    pa[i] = buddy_alloc(random_order[i % random_order_size]);
+    printf("ALLOCED ADDR : %x\n", pa[i]);
+    buddy_debug_print();
+    if(pa[i] == NULL) {
+      max_iter = i;
+    }
+  }
+
+  for(int i = 0; i < 100 && i < max_iter; ++i) {
+    buddy_free(pa[i]);
+    printf("FREED ADDR : %x\n", pa[i]);
+    buddy_debug_print();
+  }
+  buddy_debug_print();
+  printf("BUDDY ALLOCATOR TEST <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }

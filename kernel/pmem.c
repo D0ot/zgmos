@@ -9,7 +9,7 @@
 #include "panic.h"
 
 
-// the argument is algned to 4K 
+// the argument is algned to 4K
 // memory area is [pmem_start, pmem_end)
 void pmem_init(void *pmem_start, void *pmem_end) {
   buddy_init(pmem_start, pmem_end);
@@ -38,3 +38,6 @@ void pmem_debug_stub() {
   buddy_debug_print();
 }
 
+void pmem_test_stub() {
+  buddy_test();
+}

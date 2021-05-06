@@ -127,6 +127,8 @@ void kmem_cache_free(kmem_cache_t *kc, void *obj) {
 }
 
 void kmem_init() {
+  // initialize meta slab object comsumes some physical pages
+  // STATIC PHYSICAL MEMORY ALLOC
   slab_static_init();
   kmem_chain.kmem_cache_slab = slab_create_static(sizeof(kmem_cache_t), KMEM_CACHE_SLAB_ORDER);
   list_init(&kmem_chain.cache_list);

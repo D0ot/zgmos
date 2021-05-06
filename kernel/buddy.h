@@ -18,14 +18,16 @@ uint64_t buddy_get_free_pages_count();
 uint64_t buddy_get_total_pages_count();
 
 
-// will not check which pa is valid or not
-// the range depends on the pa's power
+// will not check whether pa is valid or not
+// the range depends on the pa's pow(order)
 void buddy_set_adat(void *pa, void *adat);
 
-// will not check which pa is valid or not
-// the range depends on the pa's power
+// will not check whether pa is valid or not
+// the range depends on the pa's pow(order)
 void *buddy_get_adat(void *pa);
 
 void buddy_debug_print();
+
+void buddy_test();
 
 #endif
