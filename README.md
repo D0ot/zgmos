@@ -25,3 +25,8 @@ see more usages in Makefile
 1. `make qemu-build`
 2. `make qemung-debug`
 3. `make gdb`
+
+
+## Dev Guide
+
+1. tag every place where staticly use buddy page with `// STATIC PHYSICAL PAGE ALLOC`

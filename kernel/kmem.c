@@ -10,32 +10,8 @@
 #include "utils.h"
 #include "buddy.h"
 #include "pmem.h"
+#include "kmem.h"
 
-static const size_t KMEM_CACHE_SIZE_LIST[] = { 8, 16, 32, 64, 128, 256, 512, 1024};
-static const size_t KMEM_CACHE_SIZE_LIST_LEN = sizeof(KMEM_CACHE_SIZE_LIST) / sizeof(KMEM_CACHE_SIZE_LIST[0]);
-
-// Page order of kmem_cache_slab
-static const size_t KMEM_CACHE_SLAB_ORDER = 0;
-
-// Page order of kmem_cache pslab
-static const size_t KMEM_CACHE_PSLAB_ORDER = 2;
-
-// Page order of kmem_cache cslab child slab (the slab really do the storages)
-static const size_t KMEM_CACHE_CSLAB_ORDER = 1;
-
-typedef struct kmem_cache {
-  struct list_head list;
-  struct list_head slab_full;
-  struct list_head slab_partial;
-  struct list_head slab_free;
-  size_t objsize;
-} kmem_cache_t;
-
-typedef struct kmem_chain {
-  struct list_head cache_list;
-  slab_t *kmem_cache_slab;
-  slab_t *pslab;
-} kmem_chain_t;
 
 kmem_chain_t kmem_chain;
 
@@ -50,6 +26,16 @@ kmem_cache_t *kmem_cache_create(size_t size) {
 }
 
 void kmem_cache_destory(kmem_cache_t *kc) {
+}
+
+void kmem_cache_shrink(kmem_cache_t *kc) {
+  slab_t *slab = NULL;
+  struct list_head *pos, *n;
+  list_for_each_safe(pos, n, &kc->slab_free) {
+    list_del(pos);
+    slab = container_of(pos, slab_t, list);
+    slab_destory(kmem_chain.pslab, slab);
+  }
 }
 
 void *kmem_cache_alloc(kmem_cache_t *kc) {
@@ -90,7 +76,7 @@ void *kmem_cache_alloc(kmem_cache_t *kc) {
         list_add(&slab->list, &kc->slab_partial);
       }
     }
-  } 
+  }
 
   return ret;
 }
@@ -139,14 +125,16 @@ void kmem_cache_free(kmem_cache_t *kc, void *obj) {
 
 void kmem_init() {
   // initialize meta slab object comsumes some physical pages
-  // STATIC PHYSICAL MEMORY ALLOC
   slab_static_init();
+
+  // STATIC PHYSICAL PAGE ALLOC
   kmem_chain.kmem_cache_slab = slab_create_static(sizeof(kmem_cache_t), KMEM_CACHE_SLAB_ORDER);
   list_init(&kmem_chain.cache_list);
+  // STATIC PHYSICAL PAGE ALLOC
   kmem_chain.pslab = slab_create_static(sizeof(slab_t), KMEM_CACHE_PSLAB_ORDER);
   for(int i = 0; i < KMEM_CACHE_SIZE_LIST_LEN; ++i) {
     kmem_cache_t *kc = kmem_cache_create(KMEM_CACHE_SIZE_LIST[i]);
-    list_add_tail(&kc->list ,&kmem_chain.cache_list);
+    kmem_add(kc);
   }
 }
 
@@ -181,7 +169,21 @@ void kmem_free(void *addr) {
   kmem_cache_free(kc, addr);
 }
 
+void kmem_shrink() {
+  struct list_head *pos;
+  list_for_each(pos, &kmem_chain.cache_list) {
+    kmem_cache_t *kc = container_of(pos, kmem_cache_t, list);
+    kmem_cache_shrink(kc);
+  }
+}
 
+void kmem_add(kmem_cache_t *kc) {
+  list_add_tail(&kc->list, &kmem_chain.cache_list);
+}
+
+void kmem_del(kmem_cache_t *kc) {
+  list_del(&kc->list);
+}
 #define KMEM_DEBUG_SLAB_PRINT(list_ptr) \
   do { \
     struct list_head *lptr;\
@@ -219,9 +221,11 @@ void kmem_debug_print() {
 }
 
 void kmem_test() {
+  printf("KMEM TEST START >>>>>>>>>>\n");
+  buddy_debug_print();
   static const int order = 2;
   void **pa = pmem_alloc(order);
-  printf("KMEM TEST START >>>>>>>>>>\n");
+
   kmem_debug_print();
   int obj_size_list[] = {1,3,5,7,8,12,31,33,48,64,63,51,99,129,400,500,666};
   const int obj_size_list_len = sizeof(obj_size_list) / sizeof(obj_size_list[0]);
@@ -249,8 +253,18 @@ void kmem_test() {
     kmem_free(pa[i]);
     printf("kmem_free address : %x\n", pa[i]);
   }
- 
+
   kmem_debug_print();
-  printf("KMEM TEST END   >>>>>>>>>>\n");
+
+  kmem_shrink();
+
+  printf("After Shrink\n");
+  kmem_debug_print();
+
+
   pmem_free(pa);
+  buddy_debug_print();
+  printf("KMEM TEST END   >>>>>>>>>>\n");
+
+
 }
