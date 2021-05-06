@@ -101,6 +101,10 @@ bool slab_empty(slab_t *slab) {
   return slab->total_obj == slab->free_obj;
 }
 
+bool slab_full(slab_t *slab) {
+  return slab->free_obj == 0;
+}
+
 void slab_destory(slab_t *pslab, slab_t *slab) {
   if(slab_empty(slab)) {
     pmem_free(slab->pg);

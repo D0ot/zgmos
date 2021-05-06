@@ -215,7 +215,7 @@ uint64_t buddy_get_total_pages_count() {
 
 void buddy_debug_print() {
   printf("Buddy System DEBUG PRINT\n");
-  printf("total : %l, free : %l;\n", bs.free_pages, bs.total_pages);
+  printf("total : %l, free : %l;\n", bs.total_pages, bs.free_pages);
   for(int i = 0; i < MAX_BLOCK_POW; ++i) {
     if(bs.indices[i] != -1) {
       printf("i = %d, pow = %d, next = %l;\n", i, (int)bs.buddies[bs.indices[i]].pow, (uint64_t)bs.buddies[bs.indices[i]].next);
