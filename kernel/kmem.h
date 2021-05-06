@@ -6,7 +6,10 @@
 
 void kmem_init();
 void *kmem_alloc(size_t objsize);
-void kmem_free(void *addr, size_t objsize);
+void kmem_free(void *addr);
+
+void kmem_debug_print();
+void kmem_test();
 
 
 

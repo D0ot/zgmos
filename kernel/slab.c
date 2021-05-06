@@ -33,11 +33,11 @@ void slab_create_ex(slab_t *slab, void *page_addr, int size_obj, int order) {
 
 // size_obj == size of object
 slab_t *slab_create_static(int size_obj, int order) {
-  return slab_create(&meta_slab, size_obj, order);
+  return slab_create(&meta_slab, size_obj, order, NULL);
 }
 
 // pslab = parent slab
-slab_t *slab_create(slab_t *pslab, int size_obj, int order) {
+slab_t *slab_create(slab_t *pslab, int size_obj, int order, void *adat) {
   slab_t *slab = slab_alloc(pslab);
   if(slab == NULL) {
     return NULL;
@@ -47,13 +47,14 @@ slab_t *slab_create(slab_t *pslab, int size_obj, int order) {
     slab_free(pslab, slab);
     return NULL;
   }
+  pmem_set_adat(pg, adat);
   slab_create_ex(slab, pg, size_obj, order);
   return slab;
 }
 
 bool slab_contain(slab_t *slab, void* obj_addr) {
   return (slab->pg <= obj_addr) &&
-    (obj_addr  < slab->pg + PAGE_SIZE * (slab->order));
+    (obj_addr  < slab->pg + PAGE_SIZE * POWER_OF_2((slab->order)));
 }
 
 void *slab_alloc(slab_t *slab) {
@@ -125,6 +126,11 @@ void slab_static_init() {
 
 void slab_static_deinit() {
   pmem_free(meta_slab.pg);
+}
+
+
+void slab_debug_print(slab_t *slab) {
+  printf("SLAB INFO@%x | pg:%x, usage:%d/%d, order:%d\n", slab, slab->pg, slab->total_obj - slab->free_obj, slab->total_obj, slab->order);
 }
 
 

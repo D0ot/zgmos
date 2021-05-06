@@ -28,7 +28,7 @@ static inline void list_add_tail(struct list_head *newlist, struct list_head *he
 
 static inline void __list_del(struct list_head *prev, struct list_head *next) {
   next->prev = prev;
-  next->next = next;
+  prev->next = next;
 }
 
 static inline void list_del(struct list_head *entry) {
@@ -48,7 +48,7 @@ static inline void list_replace(struct list_head *oldlist, struct list_head *new
   newlist->prev->next = newlist;
 }
 
-static inline int list_empty(struct list_head *head) {
+static inline int list_is_empty(struct list_head *head) {
   return head->next == head;
 }
 

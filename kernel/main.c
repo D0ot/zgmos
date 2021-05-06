@@ -19,6 +19,7 @@ int main(void) {
   pmem_init(KERNEL_END, RAM_END);
 
   kmem_init();
-
+  
+  kmem_test();
   return 0;
 }
