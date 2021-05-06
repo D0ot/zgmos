@@ -127,6 +127,7 @@ void kmem_cache_free(kmem_cache_t *kc, void *obj) {
 }
 
 void kmem_init() {
+  slab_static_init();
   kmem_chain.kmem_cache_slab = slab_create_static(sizeof(kmem_cache_t), KMEM_CACHE_SLAB_ORDER);
   list_init(&kmem_chain.cache_list);
   kmem_chain.pslab = slab_create_static(sizeof(slab_t), KMEM_CACHE_PSLAB_ORDER);
@@ -155,7 +156,6 @@ void *kmem_alloc(size_t objsize) {
       break;
     }
   }
-
   return ret;
 }
 

@@ -24,6 +24,17 @@ void pmem_free(void *pa) {
   buddy_free(pa);
 }
 
+
+void pmem_set_adat(void *pa, void *adat) {
+  buddy_set_adat(pa, adat);
+}
+
+void *pmem_get_adat(void *pa) {
+  return buddy_get_adat(pa);
+}
+
+
 void pmem_debug_stub() {
   buddy_debug_print();
 }
+

@@ -7,9 +7,12 @@
 
 
 // next is the next block with the same pow
+// pow is like "order" in linux kernel
 typedef struct buddy_block_tag{
-  uint8_t pow;
   int64_t next;
+  // additional data
+  void *adat;
+  uint8_t pow;
 } buddy_block;
 
 
@@ -42,7 +45,6 @@ uint8_t buddy_aux_get_max_true(void *pa) {
   }
   return 0;
 }
-
 
 void buddy_aux_data_init(void *pa_start, void *pa_end) {
   bs.pa_start = pa_start;
@@ -212,6 +214,20 @@ uint64_t buddy_get_total_pages_count() {
   return bs.total_pages;
 }
 
+
+void buddy_set_adat(void *pa, void *adat) {
+  int64_t index = buddy_aux_addr2index(pa);
+  int8_t pow = bs.buddies[index].pow;
+  
+  for(int i = 0; i < POWER_OF_2(pow); ++i) {
+    bs.buddies[index + i].adat = adat;
+  }
+}
+
+void *buddy_get_adat(void *pa) {
+  int64_t index = buddy_aux_addr2index(pa);
+  return bs.buddies[index].adat;
+}
 
 void buddy_debug_print() {
   printf("Buddy System DEBUG PRINT\n");
