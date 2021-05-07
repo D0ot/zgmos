@@ -38,7 +38,11 @@ bool is_power_of_2(uint64_t n);
 //                  = 4095 = 1111_1111_1111b
 #define ALL_ONE_MASK(n) ( POWER_OF_2(n) - 1 )
 
-#define ALIGN_4K(a) ( ((uint64_t)(a)) & ( ~ALL_ONE_MASK(12) ) )
+#define ALIGN_XBITS(a, n) ( ((uint64_t)(a)) & ( ~ALL_ONE_MASK(n) ) )
+
+#define ALIGN_4K(a) (ALIGN_XBITS(a, 12))
+#define ALIGN_2M(a) (ALIGN_XBITS(a, 21))
+#define ALIGN_1G(a) (ALIGN_XBITS(a, 30))
 
 
 #endif

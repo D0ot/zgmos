@@ -136,10 +136,10 @@ int strcmp(char *s1, char *s2)
   return *s1 - *s2;
 }
 
-void *memset(void *ptr, uint8_t value, uint32_t num)
+void *memset(void *ptr, uint8_t value, uint64_t num)
 {
   uint8_t *iter = ptr;
-  for (uint32_t i = 0; i < num; ++i)
+  for (uint64_t i = 0; i < num; ++i)
   {
     iter[i] = value;
   }

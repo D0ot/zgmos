@@ -20,7 +20,7 @@ int v_printf_callback(const char *format, out_func_ptr out_func, va_list ap);
 int sprintf(char *str, const char *format, ...);
 void putchar(char ch);
 char *strcpy(char *dest, const char *src);
-void *memset(void *ptr, uint8_t value, uint32_t num);
+void *memset(void *ptr, uint8_t value, uint64_t num);
 int strcmp(char *s1, char *s2);
 void *memcpy(void *dest, const void *src, size_t num);
 void *memmove(void *dest, const void *src, size_t num);

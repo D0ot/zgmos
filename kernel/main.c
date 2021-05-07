@@ -12,6 +12,7 @@
 #include "list.h"
 #include "kmem.h"
 #include "pg.h"
+#include "vmem.h"
 
 int main(void) {
   // Print LOGO.
@@ -20,7 +21,6 @@ int main(void) {
   pmem_init(KERNEL_END, RAM_END);
   kmem_init();
 
-
- 
+  vmem_test();
   return 0;
 }
