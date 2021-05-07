@@ -35,7 +35,9 @@ typedef struct kmem_chain {
 } kmem_chain_t;
 
 kmem_cache_t *kmem_cache_create(size_t size);
-// TODO
+
+// caller must ensure there are no used object in this kmem_cache
+// caller must ensure that the kmem_cache has been deleted from kmem_chain
 void kmem_cache_destory(kmem_cache_t *kc);
 void kmem_cache_shrink(kmem_cache_t *kc);
 void *kmem_cache_alloc(kmem_cache_t *kc);
@@ -51,6 +53,8 @@ void kmem_del(kmem_cache_t *kc);
 void kmem_debug_print();
 void kmem_test();
 
+void *kmalloc(size_t objsize);
+void kfree(void *obj);
 
 
 

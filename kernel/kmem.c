@@ -26,6 +26,8 @@ kmem_cache_t *kmem_cache_create(size_t size) {
 }
 
 void kmem_cache_destory(kmem_cache_t *kc) {
+  kmem_cache_shrink(kc);
+  slab_free(kmem_chain.kmem_cache_slab, kc);
 }
 
 void kmem_cache_shrink(kmem_cache_t *kc) {
@@ -184,6 +186,16 @@ void kmem_add(kmem_cache_t *kc) {
 void kmem_del(kmem_cache_t *kc) {
   list_del(&kc->list);
 }
+
+
+void *kmalloc(size_t objsize) {
+  return kmem_alloc(objsize);
+}
+void kfree(void *obj) {
+  kmem_free(obj);
+}
+
+
 #define KMEM_DEBUG_SLAB_PRINT(list_ptr) \
   do { \
     struct list_head *lptr;\
@@ -232,26 +244,26 @@ void kmem_test() {
 
   for(int i = 0; i < PAGE_SIZE * POWER_OF_2(order) / sizeof(void*);  ++i) {
     pa[i] = kmem_alloc(obj_size_list[i % obj_size_list_len]);
-    printf("kmem_alloc address : %x\n", pa[i]);
+    //printf("kmem_alloc address : %x\n", pa[i]);
     *(uint64_t*)(pa[i]) = i;
   }
   kmem_debug_print();
 
   for(int i = 0; i < PAGE_SIZE * POWER_OF_2(order) / sizeof(void*);  ++i) {
     kmem_free(pa[i]);
-    printf("kmem_free address : %x\n", pa[i]);
+    //printf("kmem_free address : %x\n", pa[i]);
   }
   kmem_debug_print();
   for(int i = 0; i < PAGE_SIZE * POWER_OF_2(order) / sizeof(void*);  ++i) {
     pa[i] = kmem_alloc(obj_size_list[(i * 7) % obj_size_list_len]);
-    printf("kmem_alloc address : %x\n", pa[i]);
+    //printf("kmem_alloc address : %x\n", pa[i]);
     *(uint64_t*)(pa[i]) = i;
   }
   kmem_debug_print();
 
   for(int i = 0; i < PAGE_SIZE * POWER_OF_2(order) / sizeof(void*);  ++i) {
     kmem_free(pa[i]);
-    printf("kmem_free address : %x\n", pa[i]);
+    //printf("kmem_free address : %x\n", pa[i]);
   }
 
   kmem_debug_print();
