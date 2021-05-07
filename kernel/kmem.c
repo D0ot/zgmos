@@ -166,7 +166,7 @@ void *kmem_alloc(size_t objsize) {
 }
 
 void kmem_free(void *addr) {
-  void *aligned_addr =(void*)((intptr_t)addr & ~(intptr_t)(POWER_OF_2(12) - 1));
+  void *aligned_addr = (void*)ALIGN_4K(addr);
   kmem_cache_t *kc = buddy_get_adat(aligned_addr);
   kmem_cache_free(kc, addr);
 }

@@ -32,5 +32,13 @@ bool is_power_of_2(uint64_t n);
 
 #define POWER_OF_2(p) (((uint64_t)1 << (p)))
 
+// n is number of '1' in binary number
+// ALL_ONE_MASK(12) = POWER_OF_2(12) - 1
+//                  = 4096 - 1
+//                  = 4095 = 1111_1111_1111b
+#define ALL_ONE_MASK(n) ( POWER_OF_2(n) - 1 )
+
+#define ALIGN_4K(a) ( ((uint64_t)(a)) & ( ~ALL_ONE_MASK(12) ) )
+
 
 #endif

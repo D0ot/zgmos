@@ -47,12 +47,15 @@ void kmem_init();
 void *kmem_alloc(size_t objsize);
 void kmem_free(void *addr);
 void kmem_shrink();
+
+// called must ensure that 2 kmem_cache with same objsize are both added
 void kmem_add(kmem_cache_t *kc);
 void kmem_del(kmem_cache_t *kc);
 
 void kmem_debug_print();
 void kmem_test();
 
+// usually, we should use this 2 functions to allocate memory for kernel
 void *kmalloc(size_t objsize);
 void kfree(void *obj);
 

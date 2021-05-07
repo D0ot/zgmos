@@ -11,15 +11,16 @@
 #include "slab.h"
 #include "list.h"
 #include "kmem.h"
+#include "pg.h"
 
 int main(void) {
   // Print LOGO.
   print_bootinfo();
   // initialize the physical memory allocator.
   pmem_init(KERNEL_END, RAM_END);
-
   kmem_init();
-  
-  kmem_test();
+
+
+ 
   return 0;
 }
