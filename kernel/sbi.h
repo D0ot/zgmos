@@ -36,28 +36,34 @@ static const int32_t SBI_BASE_FID_GET_MACHINE_IMPL_ID = 6;
 
 
 static const int32_t SBI_EID_TIMER = 0x54494D45;
+static const int32_t SBI_TIMER_FID_SET_TIMER = 0;
+
+
 static const int32_t SBI_EID_IPI = 0x735049;
 static const int32_t SBI_EID_RFENCE = 0x52464E43;
 static const int32_t SBI_EID_HSM = 0x48534D;
 static const int32_t SBI_EID_SRST = 0x53525354;
 
 
-typedef struct sbiret_tag {
+struct sbiret {
   long error;
   long value;
-} sbiret;
+};
 
-static inline sbiret sbicall(int32_t eid, int32_t fid, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
-  register uintptr_t a0 asm ("a0") = (arg0); 
-  register uintptr_t a1 asm ("a1") = (arg1);
-  register uintptr_t a2 asm ("a2") = (arg2);
-  register uintptr_t a3 asm ("a3") = (arg3);
+static inline struct sbiret sbicall(int32_t eid, int32_t fid, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2, uintptr_t arg3) {
+  register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0); 
+  register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);
+  register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);
+  register uintptr_t a3 asm ("a3") = (uintptr_t)(arg3);
   
-  register int32_t a6 asm ("a6") = (fid);
-  register int32_t a7 asm ("a7") = (eid);
-  asm volatile ("ecall" : "+r"(a0), "+r"(a1): "r"(a2), "r"(a3), "r"(a6),"r"(a7));
+  register uintptr_t a6 asm ("a6") = (uintptr_t)(fid);
+  register uintptr_t a7 asm ("a7") = (uintptr_t)(eid);
+  asm volatile ("ecall" 
+                : "+r"(a0), "+r"(a1)
+                : "r"(a2), "r"(a3), "r"(a6),"r"(a7)
+                : "memory");
 
-  sbiret ret;
+  struct sbiret ret;
   ret.error = a0;
   ret.value = a1;
   return ret;
@@ -81,7 +87,13 @@ static inline int sbi_sonsole_getchar(int ch) {
   return SBICALL0(SBI_EID_LEGACY_CONSOLE_GETCHAR, 0).error;
 }
 
+static inline void sbi_legacy_set_timer(uint64_t stime_value) {
+  SBICALL1(SBI_EID_LEGACY_SET_TIMER, 0, stime_value);
+}
+
+static inline struct sbiret sbi_set_timer(uint64_t stime_value) {
+  return SBICALL1(SBI_EID_TIMER, SBI_TIMER_FID_SET_TIMER, stime_value);
+}
 
 
 #endif // __SBI_H_
-

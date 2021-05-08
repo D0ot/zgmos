@@ -3,6 +3,9 @@
 
 #include "pg.h"
 
+// vmem only operates on the bits in pte_t(uint64_t)
+// simply say, It can runs on any platfrom
+// surely, on RISC-V, it is not meaningless
 
 // page size enum
 enum {

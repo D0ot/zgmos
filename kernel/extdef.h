@@ -27,5 +27,6 @@ EXTDEF(_sbi_start, SBI_START);
 EXTDEF(_sbi_end, SBI_END);
 
 
+extern void kvec_asm();
 
 #endif // __EXTDEF_H_

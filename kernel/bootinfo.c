@@ -3,7 +3,7 @@
 #include "extdef.h"
 #include "earlylog.h"
 
-void print_bootinfo() {
+void print_bootinfo(uint64_t hartid) {
   printf("  ______   _____   __  __      ____     _____ \n");
   printf(" |___  /  / ____| |  \\/  |    / __ \\   / ____|\n");
   printf("    / /  | |  __  | \\  / |   | |  | | | (___  \n");
@@ -11,7 +11,7 @@ void print_bootinfo() {
   printf("  / /__  | |__| | | |  | |   | |__| |  ____) |\n");
   printf(" /_____|  \\_____| |_|  |_|    \\____/  |_____/ \n");
 
-  printf("ZGM OS is booting\n");
+  printf("ZGM OS is booting, hartid: %l\n", hartid);
   printf("KERNEL_START = %x\n", KERNEL_START);
   printf("KERNEL_END = %x\n", KERNEL_END);
 
