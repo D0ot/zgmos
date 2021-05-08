@@ -105,6 +105,18 @@ void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
   }
 }
 
+void vmem_range_map(pte_t *p, void *va, void *pa, uint64_t flags, uint64_t length) {
+  uint64_t offset;
+  for(offset = 0; offset + POWER_OF_2(12) <= length; offset += POWER_OF_2(12)) {
+    vmem_map(p, va + offset, pa + offset, flags, VMEM_PAGE_4K);
+  }
+
+  if(offset < length) {
+    vmem_map(p, va + offset, pa + offset, flags, VMEM_PAGE_4K);
+  }
+}
+
+
 void vmem_unmap(pte_t *p, void *va) {
   pte_t *p2 = p + VA_VPN2(va);
   pte_t xwrv2 = PTE_EXTRACT_XWRV(*p2);
@@ -144,6 +156,17 @@ void vmem_unmap(pte_t *p, void *va) {
   }
 }
 
+void vmem_range_unmap(pte_t *p, void *va, int64_t length) {
+  uint64_t offset;
+  for(offset = 0; offset + POWER_OF_2(12) <= length; offset += POWER_OF_2(12)) {
+    vmem_unmap(p, va + offset);
+  }
+
+  if(offset < length) {
+    vmem_unmap(p, va + offset);
+  }
+
+}
 void *vmem_walk(pte_t *p, void *va, uint64_t *flags, int *page_size) {
   pte_t *p2 = p + VA_VPN2(va);
   pte_t xwrv2 = PTE_EXTRACT_XWRV(*p2);

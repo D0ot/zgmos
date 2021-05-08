@@ -28,12 +28,17 @@ pte_t *vmem_create();
 // PTE_X_SET, PTE_R_SET, PTE_W_SET, PTE_V_SET, PTE_U_SET and their 'or' combination
 void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size);
 
+void vmem_range_map(pte_t *p, void *va, void *pa, uint64_t flags, uint64_t length);
+
 // auto select the page size
 // alignment is not check insied the function
 void vmem_unmap(pte_t *p, void *va);
 
+void vmem_range_unmap(pte_t *p, void *va, int64_t length);
+
 // flags, and page_size will be written in this function if not NULL
 void *vmem_walk(pte_t *p, void *va, uint64_t *flags, int *page_size);
+
 
 
 
