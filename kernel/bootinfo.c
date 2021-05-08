@@ -14,6 +14,13 @@ void print_bootinfo() {
   printf("ZGM OS is booting\n");
   printf("KERNEL_START = %x\n", KERNEL_START);
   printf("KERNEL_END = %x\n", KERNEL_END);
+
+  printf("kernel: %x ~ %x\n", KERNEL_START, KERNEL_END);
+  printf("text: %x ~ %x\n", TEXT_START, TEXT_END);
+  printf("rodata: %x ~  %x\n", RODATA_START, RODATA_END);
+  printf("data: %x ~  %x\n", DATA_START, DATA_END);
+  printf("bss: %x ~  %x\n", BSS_START, BSS_END);
+
   printf("bootinfo done.\n");
 }
 

@@ -3,13 +3,29 @@
 
 #include <stdint.h>
 
-extern const uintptr_t _kernel_start;
-extern const uintptr_t _kernel_end;
-extern const uintptr_t _ram_end;
 
-static void *const KERNEL_START = (void*)&(_kernel_start);
-static void *const KERNEL_END = (void*)&(_kernel_end);
-static void *const RAM_END = (void*)&(_ram_end);
+#define EXTDEF(ext, sym) \
+  extern const uintptr_t ext; \
+  static void *const sym = (void*)&(ext) \
+
+EXTDEF(_text_start, TEXT_START);
+EXTDEF(_text_end, TEXT_END);
+
+EXTDEF(_data_start, DATA_START);
+EXTDEF(_data_end, DATA_END);
+
+EXTDEF(_rodata_start, RODATA_START);
+EXTDEF(_rodata_end, RODATA_END);
+
+EXTDEF(_bss_start, BSS_START);
+EXTDEF(_bss_end, BSS_END);
+
+EXTDEF(_kernel_start, KERNEL_START);
+EXTDEF(_kernel_end, KERNEL_END);
+EXTDEF(_ram_end, RAM_END);
+EXTDEF(_sbi_start, SBI_START);
+EXTDEF(_sbi_end, SBI_END);
+
 
 
 #endif // __EXTDEF_H_
