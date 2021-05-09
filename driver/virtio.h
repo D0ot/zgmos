@@ -4,12 +4,14 @@
 #include <stdint.h>
 #include <assert.h>
 
+#define RWV32(x) (*(volatile uint32_t*)(&x))
+
 static void *const VIRTIO_BLK_MMIO_BASE = (void*)0x10001000;
 
 // when using __attribute__((packed)), data read from it is all zero
 // seems a bug?
 // problem found : when using packed... gcc will read it byte by byte...
-struct virtio_regs {
+struct __attribute__((packed)) virtio_regs {
   // 0x000
   uint32_t magic_value; 
 

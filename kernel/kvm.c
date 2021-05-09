@@ -4,7 +4,7 @@
 #include "kvm.h"
 #include "vmem.h"
 #include "riscv.h"
-#include "../driver/virtio_blk_mmio.h"
+#include "../driver/virtio.h"
 
 
 void kvm_init(pte_t *kp) {

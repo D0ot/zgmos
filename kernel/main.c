@@ -11,6 +11,7 @@
 #include "vmem.h"
 #include "kvm.h"
 #include "riscv.h"
+#include "../driver/virtio.h"
 
 
 int main(uint64_t hartid) {
@@ -27,12 +28,13 @@ int main(uint64_t hartid) {
   kvm_init(kpte);
   kvm_install(kpte);
 
-
   w_stvec((uint64_t)kvec_asm);
   s_sstatus(SSTATUS_SIE);
   s_sie(SIE_SSIE | SIE_STIE);
   sbi_legacy_set_timer(r_time() + 30000000);
-  
+
+
+  virtio_dev_init(VIRTIO_BLK_MMIO_BASE);
   while(1);
   return 0;
 }

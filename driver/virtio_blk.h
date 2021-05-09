@@ -71,7 +71,8 @@ zeroes_seg.*/
 
 
 
-bool virtio_blk_init(void *base);
+void virtio_blk_init(struct virtio_regs *regs);
+void virtio_blk_set_feature(struct virtio_regs *regs);
 
 
 #endif // __VIRTIO_BLK_MMIO_H_
