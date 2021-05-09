@@ -54,6 +54,7 @@ QEMU_OPTIONS += -smp 2
 QEMU_OPTIONS += -S -gdb tcp::3008
 QEMU_OPTIONS += -drive file=fs.img,if=none,format=raw,id=x0
 QEMU_OPTIONS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+QEMU_OPTIONS += -global virtio-mmio.force-legacy=false
 
 # TODO
 qemu-debug:

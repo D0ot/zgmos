@@ -146,13 +146,17 @@ void *memset(void *ptr, uint8_t value, uint64_t num)
   return ptr;
 }
 
-void *memcpy(void *dest, const void *src, size_t num)
+void *memcpy(void *dest, const void *src, uint64_t num)
 {
-  while (1) ;
+  const uint8_t *si = src;
+  uint8_t *di = dest;
+  for(uint64_t i = 0; i < num; ++i) {
+    di[i] = si[i];
+  }
   return dest;
 }
 
-void *memmove(void *dest, const void *src, size_t num)
+void *memmove(void *dest, const void *src, uint64_t num)
 {
   return memcpy(dest, src, num);
 }
