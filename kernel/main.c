@@ -20,6 +20,7 @@ int main(uint64_t hartid) {
   pte_t* kpte;
 
   if (hartid == 0) {
+    printf_lock_init();
     printf("hart %d enter main()...\n", hartid);
     // Print LOGO.
     print_bootinfo(hartid);
@@ -46,7 +47,6 @@ int main(uint64_t hartid) {
     started = 1;
   } else {
     // hart 1
-    printf("hart %d enter main()...\n", hartid);
     while (started == 0)
       ;
     __sync_synchronize();
