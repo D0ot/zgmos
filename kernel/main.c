@@ -12,7 +12,8 @@
 #include "kvm.h"
 #include "riscv.h"
 
-int main(uint64_t hartid, void *dtb) {
+
+int main(uint64_t hartid) {
   set_hartid(hartid);
   // Print LOGO.
   print_bootinfo(hartid);
@@ -29,9 +30,11 @@ int main(uint64_t hartid, void *dtb) {
 
   w_stvec((uint64_t)kvec_asm);
   s_sstatus(SSTATUS_SIE);
-  s_sie(SIE_SSIE | SIE_STIE | SIE_SEIE);
+  s_sie(SIE_SSIE | SIE_STIE);
   sbi_legacy_set_timer(r_time() + 30000000);
+  
   while(1);
   return 0;
 }
+
 

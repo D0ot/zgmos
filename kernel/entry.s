@@ -1,8 +1,8 @@
 .section .bss.stack
 .align 16
 .global startup_stack
-startup_stack:
 .space 1024*16
+startup_stack:
 
 .section .text.start
 .global _start

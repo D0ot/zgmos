@@ -9,7 +9,6 @@
 void kvec() {
   uint64_t scause = r_scause();
   uint64_t spp = r_sstatus() & SSTATUS_SPP;
-  printf("kvec!\n");
 
   if(spp == 0) {
     // from user mode... panic
@@ -23,5 +22,4 @@ void kvec() {
     // unhandled interrupt or exception
     KERNEL_PANIC();
   }
-
 }
