@@ -41,7 +41,7 @@ SECTIONS
     *.(.rodata .rodata.*)
   } >ram AT>ram :ram_rodata
 
-  . = ALIGN(4096);
+  . = ALIGN(8);
 
   PROVIDE(_rodata_end = ABSOLUTE(.) );
   PROVIDE(_data_start = ABSOLUTE(.) );
@@ -49,7 +49,7 @@ SECTIONS
   {
     *(.data .data.*)
   } >ram AT>ram :ram_data
-  . = ALIGN(4096);
+  . = ALIGN(8);
 
   PROVIDE(_data_end = ABSOLUTE(.) );
   PROVIDE(_bss_start = ABSOLUTE(.) );
@@ -57,8 +57,8 @@ SECTIONS
   {
     *(.bss .bss.*)
   } >ram AT>ram :ram_bss
-  . = ALIGN(4096);
+  . = ALIGN(8);
   
-  PROVIDE(_bss_end = ABSOLUTE(.) );
-  PROVIDE(_kernel_end = ABSOLUTE(.) );
+  PROVIDE(_bss_end = ALIGN(4096) );
+  PROVIDE(_kernel_end = ALIGN(4096) );
 }

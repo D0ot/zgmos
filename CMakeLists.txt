@@ -44,13 +44,26 @@ add_compile_flags(BOTH
         -fno-math-errno
         -fsingle-precision-constant
         -O0
+        -I${proj_root}/driver
+        -I${proj_root}/kernel
         -ggdb
         -Wall)
 
 add_compile_flags(C -std=gnu11 -Wno-pointer-to-int-cast)
+
+if( QEMU ) 
+  message(STATUS "QEMU is set, pass it to gcc")
+  add_compile_flags(BOTH -DQEMU)
+endif()
+
+if( K210 )
+  message(STATUS "K210 is set, pass it to gcc")
+  add_compile_flags(BOTH -DK210)
+endif()
+
 include(${proj_root}/cmake/fix-9985.cmake)
 
-file(GLOB source_files "${proj_root}/kernel/*.c" "${proj_root}/kernel/*.s")
+file(GLOB source_files "${proj_root}/kernel/*.c" "${proj_root}/kernel/*.s" "${proj_root}/driver/*.c")
 
 add_executable(${PROJECT_NAME} ${source_files})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
