@@ -24,6 +24,7 @@ struct virtio_blk_req {
   uint32_t reserved;
   uint64_t sector;
   uint8_t status;
+  uint32_t d1, d2, d3;
 };
 
 struct __attribute__((__packed__)) virtio_blk_config {
@@ -86,7 +87,7 @@ struct virtio_blk *virtio_blk_init(struct virtio_regs *regs);
 void virtio_blk_set_feature(struct virtio_regs *regs);
 
 void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void *buf);
-void virtio_blk_wait();
+void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req);
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc);
  
 

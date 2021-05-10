@@ -78,11 +78,29 @@ void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void 
   blk->vq->desc[d3].len = 1;
   blk->vq->desc[d3].flags = VIRTQ_DESC_F_WRITE;
 
+  req->d1 = d1;
+  req->d2 = d2;
+  req->d3 = d3;
+
   virtio_blk_send(blk, d1);
 }
 
-void virtio_blk_wait() {
+void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
+  uint64_t cnt = 0;
+  while(RWV32(blk->regs->interrupt_status) == 0) {
+    //printf("wait\n");
+    cnt ++;
+  }
 
+  /*printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
+        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));*/
+
+  
+  RWV32(blk->regs->interrupt_ack) = RWV32(blk->regs->interrupt_status);
+
+  virtio_free_desc(blk->vq, req->d1);
+  virtio_free_desc(blk->vq, req->d2);
+  virtio_free_desc(blk->vq, req->d3);
 }
 
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc) {
