@@ -43,7 +43,7 @@ int main(uint64_t hartid) {
     printf("hart %d init done\n", hartid);
     // muticore start
     unsigned long mask = 1 << 1;
-    sbi_send_ipi(&mask);
+    sbi_legacy_send_ipi(&mask);
     __sync_synchronize();
     started = 1;
   } else {
@@ -55,12 +55,11 @@ int main(uint64_t hartid) {
     s_sstatus(SSTATUS_SIE);
     s_sie(SIE_SSIE | SIE_STIE);
     printf("hart %d enter main()...\n", hartid);
-    //kvm_install(kpte);
+    kvm_install(kpte);
     printf("hart 1 init done\n");
   }
   
-  while(1) {
-  }
+  while(1);
   return 0;
 }
 

@@ -18,7 +18,7 @@ static const int32_t SBI_EID_LEGACY_SET_TIMER = 0;
 static const int32_t SBI_EID_LEGACY_CONSOLE_PUTCHAR = 1;
 static const int32_t SBI_EID_LEGACY_CONSOLE_GETCHAR = 2;
 static const int32_t SBI_EID_LEGACY_CLEAR_IPI = 3;
-static const int32_t SBI_EID_LEGACY_SNED_IPI = 4;
+static const int32_t SBI_EID_LEGACY_SEND_IPI = 4;
 static const int32_t SBI_EID_LEGACY_REMOTE_FENCE_I = 5;
 static const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA = 6;
 static const int32_t SBI_EID_LEGACY_REMOTE_SFENCE_VMA_ASID = 7;
@@ -95,14 +95,14 @@ static inline struct sbiret sbi_set_timer(uint64_t stime_value) {
   return SBICALL1(SBI_EID_TIMER, SBI_TIMER_FID_SET_TIMER, stime_value);
 }
 
-static inline void sbi_clear_ipi(void)
+static inline void sbi_legacy_clear_ipi(void)
 {
 	SBICALL0(SBI_EID_LEGACY_CLEAR_IPI, 0);
 }
 
-static inline void sbi_send_ipi(const uint64_t *hart_mask)
+static inline void sbi_legacy_send_ipi(const uint64_t *hart_mask)
 {
-	SBICALL1(SBI_EID_LEGACY_SNED_IPI, 0, hart_mask);
+	SBICALL1(SBI_EID_LEGACY_SEND_IPI, 0, (uint64_t)hart_mask);
 }
 
 
