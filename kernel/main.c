@@ -40,7 +40,8 @@ int main(uint64_t hartid) {
     s_sie(SIE_SSIE | SIE_STIE);
     sbi_legacy_set_timer(r_time() + 30000000);
 
-    printf("hart 0 init done\n");
+    printf("hart %d init done\n", hartid);
+    // muticore start
     unsigned long mask = 1 << 1;
     sbi_send_ipi(&mask);
     __sync_synchronize();
@@ -51,7 +52,7 @@ int main(uint64_t hartid) {
       ;
     __sync_synchronize();
     printf("hart %d enter main()...\n", hartid);
-    kvm_install(kpte);
+    // kvm_install(kpte);
     printf("hart 1 init done\n");
   }
   
