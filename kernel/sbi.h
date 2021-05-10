@@ -95,5 +95,15 @@ static inline struct sbiret sbi_set_timer(uint64_t stime_value) {
   return SBICALL1(SBI_EID_TIMER, SBI_TIMER_FID_SET_TIMER, stime_value);
 }
 
+static inline void sbi_clear_ipi(void)
+{
+	SBICALL0(SBI_EID_LEGACY_CLEAR_IPI, 0);
+}
+
+static inline void sbi_send_ipi(const uint64_t *hart_mask)
+{
+	SBICALL1(SBI_EID_LEGACY_SNED_IPI, 0, hart_mask);
+}
+
 
 #endif // __SBI_H_
