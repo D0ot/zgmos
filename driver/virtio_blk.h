@@ -15,12 +15,14 @@
 #define VIRTIO_BLK_S_IOERR 1
 #define VIRTIO_BLK_S_UNSUPP 2
 
+
+
+
+
 struct virtio_blk_req {
   uint32_t type;
   uint32_t reserved;
   uint64_t sector;
-  uint8_t *data;
-  uint8_t status;
 };
 
 struct __attribute__((__packed__)) virtio_blk_config {
@@ -54,6 +56,14 @@ struct __attribute__((__packed__)) virtio_blk_config {
   uint8_t unused1[3];
 };
 
+static_assert(sizeof(struct virtio_blk_config) == 15 * sizeof(uint32_t), "sizeof(struct virtio_blk_config) == 15 * sizeof(uint32_t)");
+
+
+struct virtio_blk {
+	struct virtio_regs *regs;
+	struct virtio_blk_config *config;
+	struct virtio_queue *virtq;
+};
 
 
 static const uint32_t VIRTIO_BLK_F_SIZE_MAX = (1);   // Maximum size of any single segment is in size_max.
@@ -74,6 +84,9 @@ zeroes_seg.*/
 void virtio_blk_init(struct virtio_regs *regs);
 void virtio_blk_set_feature(struct virtio_regs *regs);
 
+void virtio_blk_read(struct virtio_blk *blk);
+void virtio_blk_write(struct virtio_blk *blk);
+ 
 
 #endif // __VIRTIO_BLK_MMIO_H_
 

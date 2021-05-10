@@ -12,6 +12,7 @@
 #include "kvm.h"
 #include "riscv.h"
 #include "../driver/virtio.h"
+#include "../driver//virtio_blk.h"
 
 
 int main(uint64_t hartid) {
@@ -35,6 +36,17 @@ int main(uint64_t hartid) {
 
 
   virtio_dev_init(VIRTIO_BLK_MMIO_BASE);
+  
+  struct virtio_queue *q = virtio_queue_init();
+
+  virtio_add_queue(VIRTIO_BLK_MMIO_BASE, q);
+
+  struct virtio_blk blk;
+  blk.regs = VIRTIO_BLK_MMIO_BASE;
+  blk.virtq = q;
+
+  virtio_blk_read(&blk);
+  
   while(1);
   return 0;
 }
