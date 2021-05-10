@@ -13,11 +13,11 @@
 #include "riscv.h"
 
 volatile static int started = 0;
+pte_t* kpte;
 
 int main(uint64_t hartid) {
   set_hartid(hartid);
 
-  pte_t* kpte;
 
   if (hartid == 0) {
     printf_lock_init();
@@ -51,12 +51,16 @@ int main(uint64_t hartid) {
     while (started == 0)
       ;
     __sync_synchronize();
+    w_stvec((uint64_t)kvec_asm);
+    s_sstatus(SSTATUS_SIE);
+    s_sie(SIE_SSIE | SIE_STIE);
     printf("hart %d enter main()...\n", hartid);
-    // kvm_install(kpte);
+    //kvm_install(kpte);
     printf("hart 1 init done\n");
   }
   
-  while(1);
+  while(1) {
+  }
   return 0;
 }
 
