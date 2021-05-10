@@ -3,12 +3,26 @@
 #include "../kernel/panic.h"
 #include "../kernel/pmem.h"
 #include "../kernel/kmem.h"
+#include "../kernel/kustd.h"
 #include "virtio.h"
 
 
 
-void virtio_blk_init(struct virtio_regs *regs) {
+struct virtio_blk *virtio_blk_init(struct virtio_regs *regs) {
+  uint32_t device_id = virtio_dev_init(regs);
+  if(device_id != VIRTIO_DEV_BLK) {
+    printf("virtio_blk @ %x, not a blk dev", regs);
+    return NULL;
+  }
   virtio_blk_set_feature(regs);
+  
+  struct virtio_blk *blk = kmalloc(sizeof(struct virtio_blk));
+  blk->vq = virtio_queue_alloc(VIRTIO_QUEUE_MAX_SIZE);
+  blk->config = (struct virtio_blk_config*)&regs->config;
+  blk->regs = regs;
+  
+  virtio_add_queue(regs, blk->vq, 0);
+  return blk;
 }
 
 void virtio_blk_set_feature(struct virtio_regs *regs) {
@@ -26,8 +40,7 @@ void virtio_blk_set_feature(struct virtio_regs *regs) {
         ( 1 << VIRTIO_F_RING_EVENT_IDX ) |
         ( 1 << VIRTIO_F_RING_INDIRECT_DESC);
   if(fea & (1 << VIRTIO_BLK_F_RO)) {
-    printf("virtio_blk @ %x is read-only\n", regs);
-    fea_sel |= ( 1 << VIRTIO_BLK_F_RO);
+    printf("virtio_blk @ %x feature read-only bit.\n", regs);
   }
 
   RWV32(regs->driver_features) = fea_sel;
@@ -41,35 +54,42 @@ void virtio_blk_set_feature(struct virtio_regs *regs) {
   RWV32(regs->status) = RWV32(regs->status)  | VIRTIO_STATUS_DRIVER_OK;
 }
 
-void virtio_blk_read(struct virtio_blk *blk) {
-  struct virtio_blk_req *req = kmalloc(16);
+void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void *buf) {
 
-  req->type = VIRTIO_BLK_T_IN;
-  req->sector = 0;
+  uint32_t datamode = 0;
+  if(req->type == VIRTIO_BLK_T_IN) {
+    datamode = VIRTQ_DESC_F_WRITE;
+  }
+  uint32_t d1 = virtio_alloc_desc(blk->vq);
+  uint32_t d2 = virtio_alloc_desc(blk->vq);
+  uint32_t d3 = virtio_alloc_desc(blk->vq);
 
-  blk->virtq->desc[0].flags = VIRTQ_DESC_F_NEXT;
-  blk->virtq->desc[0].addr = (uint64_t)req;
-  blk->virtq->desc[0].len = 16;
-  blk->virtq->desc[0].next = 1;
+  blk->vq->desc[d1].flags = VIRTQ_DESC_F_NEXT;
+  blk->vq->desc[d1].addr = (uint64_t)req;
+  blk->vq->desc[d1].len = 16;
+  blk->vq->desc[d1].next = d2;
+  
+  blk->vq->desc[d2].addr = (uint64_t)buf;
+  blk->vq->desc[d2].len = 512;
+  blk->vq->desc[d2].flags = VIRTQ_DESC_F_NEXT | datamode;
+  blk->vq->desc[d2].next = d3;
 
-  void *dat = pmem_alloc(0);
-  blk->virtq->desc[1].addr = (uint64_t)dat;
-  blk->virtq->desc[1].len = 512;
-  blk->virtq->desc[1].flags = VIRTQ_DESC_F_WRITE | VIRTQ_DESC_F_NEXT;
-  blk->virtq->desc[1].next = 2;
+  blk->vq->desc[d3].addr = (uint64_t)(&(req->status));
+  blk->vq->desc[d3].len = 1;
+  blk->vq->desc[d3].flags = VIRTQ_DESC_F_WRITE;
 
-  blk->virtq->desc[2].addr = (uint64_t)(dat + 512);
-  blk->virtq->desc[2].len = 1;
-  blk->virtq->desc[2].flags = VIRTQ_DESC_F_WRITE;
+  virtio_blk_send(blk, d1);
+}
 
-  blk->virtq->avail->ring[0] = 0;
+void virtio_blk_wait() {
+
+}
+
+void virtio_blk_send(struct virtio_blk *blk, uint32_t desc) {
+  blk->vq->avail->ring[blk->vq->avail->idx % blk->vq->len] = desc;
   __sync_synchronize();
-  blk->virtq->avail[0].idx++;
+  blk->vq->avail->idx++;
   __sync_synchronize();
   RWV32(blk->regs->queue_notify) = 0;
-  while(1);
-
 }
 
-void virtio_blk_write(struct virtio_blk *blk) {
-}

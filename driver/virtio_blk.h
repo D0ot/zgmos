@@ -23,6 +23,7 @@ struct virtio_blk_req {
   uint32_t type;
   uint32_t reserved;
   uint64_t sector;
+  uint8_t status;
 };
 
 struct __attribute__((__packed__)) virtio_blk_config {
@@ -62,7 +63,7 @@ static_assert(sizeof(struct virtio_blk_config) == 15 * sizeof(uint32_t), "sizeof
 struct virtio_blk {
 	struct virtio_regs *regs;
 	struct virtio_blk_config *config;
-	struct virtio_queue *virtq;
+	struct virtio_queue *vq;
 };
 
 
@@ -81,11 +82,12 @@ zeroes_seg.*/
 
 
 
-void virtio_blk_init(struct virtio_regs *regs);
+struct virtio_blk *virtio_blk_init(struct virtio_regs *regs);
 void virtio_blk_set_feature(struct virtio_regs *regs);
 
-void virtio_blk_read(struct virtio_blk *blk);
-void virtio_blk_write(struct virtio_blk *blk);
+void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void *buf);
+void virtio_blk_wait();
+void virtio_blk_send(struct virtio_blk *blk, uint32_t desc);
  
 
 #endif // __VIRTIO_BLK_MMIO_H_
