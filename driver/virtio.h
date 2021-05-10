@@ -4,12 +4,19 @@
 #include <stdint.h>
 #include <assert.h>
 
+#define RWV32(x) (* ( (volatile uint32_t*)(&(x)) ) )
+
+#define VIRTIO_QUEUE_SIZE (128)
+
 static void *const VIRTIO_BLK_MMIO_BASE = (void*)0x10001000;
+
+static const uint32_t VIRTIO_QUEUE_MAX_SIZE = 150;
 
 // when using __attribute__((packed)), data read from it is all zero
 // seems a bug?
 // problem found : when using packed... gcc will read it byte by byte...
 struct virtio_regs {
+//struct __attribute__((packed)) virtio_regs {
   // 0x000
   uint32_t magic_value; 
 
@@ -105,6 +112,54 @@ struct virtio_regs {
 // because we have not used attribute packed
 static_assert(sizeof(struct virtio_regs) == 0x100, "sizeof(virtio_regs) != 0x100 )");
 
+struct __attribute__((packed)) virtqueue_desc {
+	uint64_t addr;
+	uint32_t len;
+/* This marks a buffer as continuing via the next field. */
+#define VIRTQ_DESC_F_NEXT 1
+/* This marks a buffer as device write-only (otherwise device read-only). */
+#define VIRTQ_DESC_F_WRITE 2
+/* This means the buffer contains a list of buffer descriptors. */
+#define VIRTQ_DESC_F_INDIRECT 4
+	/* The flags as indicated above. */
+	uint16_t flags;
+	/* Next field if flags & NEXT */
+	uint16_t next;
+};
+
+struct __attribute__((packed)) virtqueue_avail {
+#define VIRTQ_AVAIL_F_NO_INTERRUPT 1
+	uint16_t flags;
+	uint16_t idx;
+	uint16_t ring[0];
+  //uint16_t used_event;
+};
+
+
+struct __attribute__((packed)) virtqueue_used_elem {
+	uint32_t id;
+	uint32_t len;
+};
+
+struct __attribute__((packed)) virtqueue_used {
+#define VIRTQ_USED_F_NO_NOTIFY 1
+	uint16_t flags;
+	uint16_t idx;
+	struct virtqueue_used_elem ring[0];
+  //uint16_t avail_event;
+};
+
+
+struct virtio_queue{
+  uint64_t len;
+  uint64_t free_idx;
+  struct virtqueue_desc *desc;
+  struct virtqueue_avail *avail;
+  struct virtqueue_used *used;
+};
+
+
+
 #define VIRTIO_OFFSET_DEF(n, o) \
   static const uint64_t VIRTIO_OFFSET_##n = (o);
 
@@ -147,7 +202,23 @@ static const uint32_t VIRTIO_STATUS_FEATURES_OK       = 8;
 static const uint32_t VIRTIO_STATUS_DRIVER_OK         = 4;
 static const uint32_t VIRTIO_STATUS_DEVICE_NEEDS_RESET= 64;
 
+static const uint32_t VIRTIO_F_RING_INDIRECT_DESC = 28;
+static const uint32_t VIRTIO_F_RING_EVENT_IDX = 29;
 
-void virtio_dev_init(volatile struct virtio_regs *regs);
+
+uint64_t virtio_dev_init(struct virtio_regs *regs);
+
+// allocate memory, it does not touch MMIO 
+// queue_num max size is VIRTIO_QUEUE_MAX_SIZE == 150
+struct virtio_queue *virtio_queue_alloc(uint32_t queue_num);
+
+// zero is not used, to indicate that there are no desc
+uint64_t virtio_alloc_desc(struct virtio_queue *vq);
+
+void virtio_free_desc(struct virtio_queue *vq, uint64_t desc);
+
+void virtio_queue_free(struct virtio_queue *vq);
+
+void virtio_add_queue(struct virtio_regs *regs, struct virtio_queue *vq, uint32_t vq_id);
 
 #endif

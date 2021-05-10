@@ -44,5 +44,10 @@ bool is_power_of_2(uint64_t n);
 #define ALIGN_2M(a) (ALIGN_XBITS(a, 21))
 #define ALIGN_1G(a) (ALIGN_XBITS(a, 30))
 
+inline static void *align_next(void *addr, uint64_t align) {
+  uint64_t t = (uint64_t)addr;
+  return (void*)((t & ~(align - 1)) + (t & (align - 1) ? (align) : (0)));
+}
+
 
 #endif

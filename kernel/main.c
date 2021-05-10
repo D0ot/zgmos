@@ -11,13 +11,14 @@
 #include "vmem.h"
 #include "kvm.h"
 #include "riscv.h"
+#include "../driver/virtio.h"
+#include "../driver//virtio_blk.h"
 
 volatile static int started = 0;
 pte_t* kpte;
 
 int main(uint64_t hartid) {
   set_hartid(hartid);
-
 
   if (hartid == 0) {
     printf_lock_init();
@@ -58,7 +59,6 @@ int main(uint64_t hartid) {
     kvm_install(kpte);
     printf("hart 1 init done\n");
   }
-  
   while(1);
   return 0;
 }
