@@ -85,7 +85,7 @@ void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void 
   virtio_blk_send(blk, d1);
 }
 
-void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
+bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
   uint64_t cnt = 0;
   while(RWV32(blk->regs->interrupt_status) == 0) {
     //printf("wait\n");
@@ -102,6 +102,13 @@ void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
   virtio_free_desc(blk->vq, req->d1);
   virtio_free_desc(blk->vq, req->d2);
   virtio_free_desc(blk->vq, req->d3);
+
+  if(req->status == VIRTIO_BLK_S_OK) {
+    return req->status == VIRTIO_BLK_S_OK;
+  }else {
+    printf("virtio_blk @ %x ,op failed\n", blk->regs);
+  }
+
 }
 
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc) {
