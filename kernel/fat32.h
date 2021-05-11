@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "../hal/disk_hal.h"
 
+
 // abstruction file system operation
 
 struct mbr_part_entry {
@@ -25,6 +26,9 @@ struct mbr_info {
 void get_mbr_info(struct mbr_info, uint8_t *sector);
 
 
+
+
+
 // Boot sector and BPB structure
 // the member nameing conforms to fat spec
 struct fat32_bpb {
@@ -40,7 +44,7 @@ struct fat32_bpb {
   // Sectors per Cluster
   uint8_t   SecPerClus;
 
-  // number of reserved sectors in 
+  // number of reserved sectors in
   // the reserved region of the volume
   uint16_t  RsvdSecCnt;
 
@@ -52,7 +56,7 @@ struct fat32_bpb {
 
   // when zero, ToSec32 must not be zero
   uint16_t  ToSec16;
-  
+
   // fixed, 0xf8
   uint8_t   Media;
 
@@ -61,7 +65,7 @@ struct fat32_bpb {
 
   // do not care
   uint16_t  SecPerTrk;
-  
+
   // do not care
   uint16_t  NumHeads;
 
@@ -137,8 +141,9 @@ static const uint8_t FAT32_ATTR_LONG_NAME = FAT32_ATTR_READ_ONLY |
                                             FAT32_ATTR_SYSTEM |
                                             FAT32_ATTR_VOLUME_ID;
 
-struct fat32_directory {
-  char Name[8];
+
+struct fat32_dir_entry {
+  char Name[11];
   uint8_t Attr;
   // reserved for NT
   uint8_t NTRes;
@@ -159,6 +164,28 @@ struct fat32_directory {
 } __attribute__((packed));
 
 
+static const uint8_t FAT32_LAST_LONG_ENTRY = 0x40;
+
+struct fat32_longname_entry {
+  uint8_t Ord;
+  uint16_t Name1[5];
+  uint8_t Attr;
+  uint8_t Type;
+  uint8_t Chksum;
+  uint16_t Name2[6];
+  uint16_t FstClusLO;
+  uint16_t Name3[2];
+}__attribute__((packed));
+
+
+static const uint8_t FAT32_BIO_FLAG_INVALID = 0;
+static const uint8_t FAT32_BIO_FLAG_CLEAN = 1;
+static const uint8_t FAT32_BIO_FLAG_DIRTY = 2;
+
+
+// dsidx means disk sector index with MBR as 0
+// sidx means sector index with volume boot sector as 0
+// cidx means cluster index with first data cluster as zero
 
 struct fat32_fs {
 
@@ -166,42 +193,111 @@ struct fat32_fs {
   struct disk_hal *disk;
 
   // fat32 volume start position, same with HiddSec
-  uint32_t start_sector;
+  uint32_t dsidx;
 
   // fat32 volume sector count
   uint32_t total_sector;
 
-  uint32_t sector_per_cluster;
+  // sector size 
+  uint32_t byte_per_sector;
+
+  // chain per sector
+  uint32_t chain_per_sector;
+
+  uint32_t sec_per_cluster;
 
   // reserved sector count
   uint32_t reserved_sec_cnt;
 
-  // ont file alloc table size
-  uint32_t fat_size;
+  // one table size in sector
+  uint32_t sec_per_table;
 
   // number of file alloc table
-  uint32_t fat_num;
+  uint32_t table_num;
 
   // root directory cluster number
-  uint32_t root_cluster;
+  uint32_t root_cidx;
 
   // internal buffer
+  //[buf_start_sidx, buf_end_sidx);
   void *buf;
+  uint32_t sec_per_buf;
+  uint32_t *buf_activity;
+  uint8_t *buf_flags;
+  uint32_t *buf_cidx;
 
   // FOLLOWING IS CALCULATED PARAMS
 
   // first file alloc table sector number
-  uint32_t fat_sector;
+  uint32_t table_sidx;
 
 
   // first data cluster sector number
-  uint32_t first_cluster;
+  uint32_t first_cluster_sidx;
 
 };
 
+static const uint32_t FAT32_OBJ_FILE = 1;
+static const uint32_t FAT32_OBJ_DIRECTORY = 2;
+
+struct fat32_obj{
+  // cluster index in File Alloc Table
+  uint32_t cidx;
+  // file or directory
+  uint32_t type;
+};
+
+struct fat32_directory_iter{
+  uint32_t dir_cidx;
+  uint32_t cur_entry_count;
+  uint32_t next_entry_count;
+};
+
+// File system ops
 struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32_t total_sector);
 void fat32_destory(struct fat32_fs *fs);
 
+// get the obj of root directory
+void fat32_get_root_dir(struct fat32_fs *fs, struct fat32_obj *obj);
+
+// check if obj is a file
+bool fat32_is_file(struct fat32_fs *fs, struct fat32_obj *obj);
+
+// check if obj is a directory
+bool fat32_is_directory(struct fat32_fs *fs, struct fat32_obj *obj);
+
+// start a iteration through a directory
+void fat32_iter_start(struct fat32_fs *fs, struct fat32_directory_iter *iter);
+
+// get next obj in directory
+// return false when there are no next 
+bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, struct fat32_obj *obj);
+
+// name is the directory name
+bool fat32_mkdir(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
+
+// create a new file
+bool fat32_create_file(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
+
+// get the file size
+uint32_t fat32_get_file_size(struct fat32_fs *fs, struct fat32_obj *obj);
+
+// get the file name
+void fat32_get_obj_name(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len);
+
+// read the file content;
+// return the real byte read
+// buf_len max is 4096
+uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek);
 
 
+// write the file content;
+// return the real byte written
+// buf_len max is 4096
+uint32_t fat32_write(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek);
+
+
+
+// bio test func
+void fat32_bio_test(struct fat32_fs *fs);
 #endif // __FAT32_H_
