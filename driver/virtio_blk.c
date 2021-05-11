@@ -107,6 +107,7 @@ bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
     return req->status == VIRTIO_BLK_S_OK;
   }else {
     printf("virtio_blk @ %x ,op failed\n", blk->regs);
+    return false;
   }
 }
 
