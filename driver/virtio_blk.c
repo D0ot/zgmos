@@ -103,7 +103,11 @@ bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
   virtio_free_desc(blk->vq, req->d2);
   virtio_free_desc(blk->vq, req->d3);
 
-  return req->status == VIRTIO_BLK_S_OK;
+  if(req->status == VIRTIO_BLK_S_OK) {
+    return req->status == VIRTIO_BLK_S_OK;
+  }else {
+    printf("virtio_blk @ %x ,op failed\n", blk->regs);
+  }
 }
 
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc) {
