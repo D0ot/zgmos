@@ -37,7 +37,7 @@ void virtio_blk_set_feature(struct virtio_regs *regs) {
         ( 1 << VIRTIO_BLK_F_SEG_MAX  ) |
         ( 1 << VIRTIO_BLK_F_SIZE_MAX  ) |
         ( 1 << VIRTIO_BLK_F_TOPOLOGY ) | 
-        ( 1 << VIRTIO_F_RING_EVENT_IDX ) |
+//        ( 1 << VIRTIO_F_RING_EVENT_IDX ) |
         ( 1 << VIRTIO_F_RING_INDIRECT_DESC);
   if(fea & (1 << VIRTIO_BLK_F_RO)) {
     printf("virtio_blk @ %x feature read-only bit.\n", regs);
@@ -92,9 +92,10 @@ void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
     cnt ++;
   }
 
-  /*printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
-        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));*/
-
+  printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
+        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));
+  
+  blk->vq->used_event[0] = blk->vq->used->idx;
   
   RWV32(blk->regs->interrupt_ack) = RWV32(blk->regs->interrupt_status);
 

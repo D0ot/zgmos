@@ -155,7 +155,9 @@ struct virtio_queue{
   uint64_t free_idx;
   struct virtqueue_desc *desc;
   struct virtqueue_avail *avail;
+  uint16_t *used_event;
   struct virtqueue_used *used;
+  uint16_t *avail_event;
 };
 
 
