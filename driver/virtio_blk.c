@@ -37,7 +37,7 @@ void virtio_blk_set_feature(struct virtio_regs *regs) {
         ( 1 << VIRTIO_BLK_F_SEG_MAX  ) |
         ( 1 << VIRTIO_BLK_F_SIZE_MAX  ) |
         ( 1 << VIRTIO_BLK_F_TOPOLOGY ) | 
-        ( 1 << VIRTIO_F_RING_EVENT_IDX ) |
+//        ( 1 << VIRTIO_F_RING_EVENT_IDX ) |
         ( 1 << VIRTIO_F_RING_INDIRECT_DESC);
   if(fea & (1 << VIRTIO_BLK_F_RO)) {
     printf("virtio_blk @ %x feature read-only bit.\n", regs);
@@ -85,22 +85,30 @@ void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void 
   virtio_blk_send(blk, d1);
 }
 
-void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
+bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
   uint64_t cnt = 0;
   while(RWV32(blk->regs->interrupt_status) == 0) {
     //printf("wait\n");
     cnt ++;
   }
 
-  /*printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
-        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));*/
-
+  printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
+        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));
+  
+  blk->vq->used_event[0] = blk->vq->used->idx;
   
   RWV32(blk->regs->interrupt_ack) = RWV32(blk->regs->interrupt_status);
 
   virtio_free_desc(blk->vq, req->d1);
   virtio_free_desc(blk->vq, req->d2);
   virtio_free_desc(blk->vq, req->d3);
+
+  if(req->status == VIRTIO_BLK_S_OK) {
+    return req->status == VIRTIO_BLK_S_OK;
+  }else {
+    printf("virtio_blk @ %x ,op failed\n", blk->regs);
+    return false;
+  }
 }
 
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc) {

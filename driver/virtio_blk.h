@@ -17,8 +17,6 @@
 
 
 
-
-
 struct virtio_blk_req {
   uint32_t type;
   uint32_t reserved;
@@ -87,7 +85,7 @@ struct virtio_blk *virtio_blk_init(struct virtio_regs *regs);
 void virtio_blk_set_feature(struct virtio_regs *regs);
 
 void virtio_blk_submit(struct virtio_blk *blk, struct virtio_blk_req *req, void *buf);
-void virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req);
+bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req);
 void virtio_blk_send(struct virtio_blk *blk, uint32_t desc);
  
 

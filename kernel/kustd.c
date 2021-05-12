@@ -122,6 +122,15 @@ char *strcpy(char *dest, const char *src)
   return ret;
 }
 
+char *strcpy_end(char *dest, const char *src) {
+  while (*src)
+  {
+    *dest++ = *src++;
+  }
+  *dest = '\0';
+  return dest;
+}
+
 int strcmp(char *s1, char *s2)
 {
   while (*s1 && *s2)

@@ -46,10 +46,17 @@ struct virtio_queue *virtio_queue_alloc(uint32_t queue_size) {
   p->len = queue_size;
   p->desc = pm;
   p->avail = pm + avail_offset;
+  p->avail->flags = 0;
+
   p->used = pm + used_offset;
   p->avail->idx = 0;
   p->used->idx = 0;
   p->free_idx = 0;
+
+  p->avail_event = (uint16_t*)(p->used->ring + p->len);
+  p->avail_event[0] = 1;
+  p->used_event = p->avail->ring + p->len;
+  p->used_event[0] = 0;
 
   for(uint64_t i = 0; i < queue_size; ++i) {
     p->desc[i].next = i + 1;

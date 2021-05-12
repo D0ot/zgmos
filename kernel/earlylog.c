@@ -22,3 +22,18 @@ int printf(const char *format, ...) {
   spinlock_release(&printf_lock);
   return ret;
 }
+
+
+int puts(const char *str) {
+  spinlock_acquire(&printf_lock);
+
+  while(*str) {
+    sbi_console_putchar(*str);
+    str++;
+  }
+  sbi_console_putchar('\n');
+
+  spinlock_release(&printf_lock);
+
+  return 0;
+}
