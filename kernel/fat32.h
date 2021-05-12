@@ -134,13 +134,14 @@ static const uint8_t FAT32_ATTR_READ_ONLY = 0x01;
 static const uint8_t FAT32_ATTR_HIDDEN = 0x02;
 static const uint8_t FAT32_ATTR_SYSTEM = 0x04;
 static const uint8_t FAT32_ATTR_VOLUME_ID = 0x08;
-static const uint8_t FAT32_ATTR_DRECTORY = 0x10;
+static const uint8_t FAT32_ATTR_DIRECTORY = 0x10;
 static const uint8_t FAT32_ATTR_ARCHIVE = 0x20;
 static const uint8_t FAT32_ATTR_LONG_NAME = FAT32_ATTR_READ_ONLY |
                                             FAT32_ATTR_HIDDEN |
                                             FAT32_ATTR_SYSTEM |
                                             FAT32_ATTR_VOLUME_ID;
 
+static const uint8_t FAT32_ATTR_LONG_NAME_MASK = FAT32_ATTR_LONG_NAME | FAT32_ATTR_DIRECTORY | FAT32_ATTR_ARCHIVE;
 
 struct fat32_dir_entry {
   char Name[11];
@@ -166,7 +167,7 @@ struct fat32_dir_entry {
 
 static const uint8_t FAT32_LAST_LONG_ENTRY = 0x40;
 
-struct fat32_longname_entry {
+struct fat32_long_name_entry{
   uint8_t Ord;
   uint16_t Name1[5];
   uint8_t Attr;
@@ -224,7 +225,7 @@ struct fat32_fs {
   uint32_t sec_per_buf;
   uint32_t *buf_activity;
   uint8_t *buf_flags;
-  uint32_t *buf_cidx;
+  uint32_t *buf_sidx;
 
   // FOLLOWING IS CALCULATED PARAMS
 
@@ -235,26 +236,52 @@ struct fat32_fs {
   // first data cluster sector number
   uint32_t first_cluster_sidx;
 
+  // cluster number
+  uint32_t cluster_num;
+
+  // for FAT32 FSInfo sector
+  uint32_t free_count;
+  uint32_t nxt_free;
 };
 
 static const uint32_t FAT32_OBJ_FILE = 1;
 static const uint32_t FAT32_OBJ_DIRECTORY = 2;
+
+
+
+// a long filename entry can store 13 char
+#define FAT32_LONG_FN_LEN  (13)
+
+// a short filename entry can store 11 char
+#define FAT32_SHORT_FN_LEN  (11)
+
+// buffer size
+#define FAT32_LONG_FN_STACK_NUM  (10)
 
 struct fat32_obj{
   // cluster index in File Alloc Table
   uint32_t cidx;
   // file or directory
   uint32_t type;
+
+  uint32_t table_index;
+
+  char long_fn[FAT32_LONG_FN_LEN * FAT32_LONG_FN_STACK_NUM + 1];
+  char short_fn[FAT32_SHORT_FN_LEN + 1];
+
+  // for directory, it is undefined
+  uint32_t file_size;
 };
 
+// cur == current
 struct fat32_directory_iter{
-  uint32_t dir_cidx;
-  uint32_t cur_entry_count;
-  uint32_t next_entry_count;
+  uint32_t cur_cidx;
+  uint32_t cur_sidx_offset;
+  uint32_t cur_byte_offset;
 };
 
 // File system ops
-struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32_t total_sector);
+struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32_t total_sector, uint8_t buf_order);
 void fat32_destory(struct fat32_fs *fs);
 
 // get the obj of root directory
@@ -266,8 +293,10 @@ bool fat32_is_file(struct fat32_fs *fs, struct fat32_obj *obj);
 // check if obj is a directory
 bool fat32_is_directory(struct fat32_fs *fs, struct fat32_obj *obj);
 
+
+
 // start a iteration through a directory
-void fat32_iter_start(struct fat32_fs *fs, struct fat32_directory_iter *iter);
+void fat32_iter_start(struct fat32_fs *fs, struct fat32_obj *parent, struct fat32_directory_iter *iter);
 
 // get next obj in directory
 // return false when there are no next 
@@ -298,6 +327,9 @@ uint32_t fat32_write(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint
 
 
 
-// bio test func
+// bio test
 void fat32_bio_test(struct fat32_fs *fs);
+
+// fat32 fs test
+void fat32_test(struct fat32_fs *fs);
 #endif // __FAT32_H_
