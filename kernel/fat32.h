@@ -309,10 +309,10 @@ bool fat32_mkdir(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
 bool fat32_create_file(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
 
 // get the file size
-uint32_t fat32_get_file_size(struct fat32_fs *fs, struct fat32_obj *obj);
+uint32_t fat32_get_file_size(struct fat32_obj *obj);
 
 // get the file name
-void fat32_get_obj_name(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len);
+char *fat32_get_obj_name(struct fat32_obj *obj);
 
 // read the file content;
 // return the real byte read

@@ -388,9 +388,10 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               fat32_copy_name_short(entry, (uint8_t*)obj->short_fn);
               
               obj->type = FAT32_OBJ_FILE;
-              iter->cur_cidx = cidx;
-              iter->cur_sidx_offset = sidx_offset;
-              iter->cur_byte_offset = i;
+              iter->cur_byte_offset = (i + 32) % fs->byte_per_sector;
+              iter->cur_sidx_offset = sidx_offset + ( (i + 32) / fs->byte_per_sector ? 1 : 0);
+              iter->cur_cidx = cidx + ( (iter->cur_sidx_offset / fs->sec_per_cluster) ? 1 : 0);
+              iter->cur_sidx_offset = iter->cur_sidx_offset % fs->sec_per_cluster;
 
               return true;
             } else if((dat[i+11] & (FAT32_ATTR_VOLUME_ID | FAT32_ATTR_DIRECTORY)) == FAT32_ATTR_DIRECTORY) {
@@ -409,10 +410,12 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               }
 
               fat32_copy_name_short(entry, (uint8_t*)obj->short_fn);
+
               obj->type = FAT32_OBJ_DIRECTORY;
-              iter->cur_cidx = cidx;
-              iter->cur_sidx_offset = sidx_offset;
-              iter->cur_byte_offset = i;
+              iter->cur_byte_offset = (i + 32) % fs->byte_per_sector;
+              iter->cur_sidx_offset = sidx_offset + ( (i + 32) / fs->byte_per_sector ? 1 : 0);
+              iter->cur_cidx = cidx + ( (iter->cur_sidx_offset / fs->sec_per_cluster) ? 1 : 0);
+              iter->cur_sidx_offset = iter->cur_sidx_offset % fs->sec_per_cluster;
               return true;
             } else if((dat[i+11] & (FAT32_ATTR_VOLUME_ID | FAT32_ATTR_DIRECTORY)) == FAT32_ATTR_VOLUME_ID) {
               // found a volume label
@@ -431,6 +434,60 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
   }
   return false;
 }
+
+
+bool fat32_mkdir(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name) {
+  while(1);
+}
+
+bool fat32_create_file(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name) {
+  while(1);
+}
+
+uint32_t fat32_get_file_size(struct fat32_obj *obj) {
+  return obj->file_size;
+}
+
+char *fat32_get_obj_name(struct fat32_obj *obj) {
+  return obj->long_fn;
+}
+
+uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek) {
+  if(seek >= obj->file_size) {
+    return 0;
+  }
+
+  uint32_t byte_offset_init = seek % fs->byte_per_sector;
+  uint32_t sidx_offset_init = (seek / fs->byte_per_sector);
+  uint32_t cidx_cnt = sidx_offset_init / fs->sec_per_cluster;
+  sidx_offset_init = sidx_offset_init % fs->sec_per_cluster;
+  
+  uint32_t byte_cnt = 0;
+
+  uint32_t cidx = obj->cidx;
+  while(cidx_cnt--) {
+    cidx = fat32_get_chain(fs, cidx);
+  }
+
+  while(cidx < FAT32_CHAIN_END_FLAG) {
+    uint32_t sidx_base = fat32_clu2sec(fs, cidx);
+
+    for(uint32_t sidx_offset = sidx_offset_init; sidx_offset < fs->sec_per_cluster; ++sidx_offset) {
+      void *dat = fat32_bio_read(fs, sidx_base + sidx_offset);
+      uint32_t len = min(fs->byte_per_sector - byte_offset_init, buf_len - byte_cnt);
+      memcpy(buf + byte_cnt, dat + byte_offset_init, len);
+      byte_cnt += len;
+      if(byte_cnt == buf_len) {
+        return buf_len;
+      }
+    }
+    sidx_offset_init = 0;
+    byte_offset_init = 0;
+    cidx = fat32_get_chain(fs, cidx);
+  }
+  return byte_cnt;
+}
+
 
 
 struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32_t total_sector, uint8_t buf_order) {
@@ -555,8 +612,17 @@ void fat32_test(struct fat32_fs *fs) {
   struct fat32_directory_iter iter;
   fat32_iter_start(fs, &root, &iter);
   struct fat32_obj tmp;
-  fat32_iter_next(fs, &iter, &tmp);
-  printf(tmp.long_fn);
+  char *pa = pmem_alloc(0);
+  while(fat32_iter_next(fs, &iter, &tmp)) {
+    printf(tmp.long_fn);
+    printf("\n");
+    if(fat32_is_file(fs, &tmp)) {
+      fat32_read(fs, &tmp, pa, PAGE_SIZE, 0);
+      pa[PAGE_SIZE-1] = 0;
+      puts(pa);
+      printf("\n");
+    }
+  }
   while(1);
 }
 
