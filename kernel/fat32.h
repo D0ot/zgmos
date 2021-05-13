@@ -321,13 +321,13 @@ char *fat32_get_obj_name(struct fat32_obj *obj);
 // read the file content;
 // return the real byte read
 // buf_len max is 4096
-uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek);
+uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint64_t buf_len, uint64_t seek);
 
 
 // write the file content;
 // return the real byte written
 // buf_len max is 4096
-uint32_t fat32_write(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek);
+uint32_t fat32_write(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint64_t buf_len, uint64_t seek);
 
 
 

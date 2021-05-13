@@ -456,17 +456,17 @@ char *fat32_get_obj_name(struct fat32_obj *obj) {
   return obj->long_fn;
 }
 
-uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint32_t buf_len, uint32_t seek) {
+uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint64_t buf_len, uint64_t seek) {
   if(seek >= obj->file_size) {
     return 0;
   }
 
-  uint32_t byte_offset_init = seek % fs->byte_per_sector;
+  uint64_t byte_offset_init = seek % fs->byte_per_sector;
   uint32_t sidx_offset_init = (seek / fs->byte_per_sector);
   uint32_t cidx_cnt = sidx_offset_init / fs->sec_per_cluster;
   sidx_offset_init = sidx_offset_init % fs->sec_per_cluster;
   
-  uint32_t byte_cnt = 0;
+  uint64_t byte_cnt = 0;
 
   uint32_t cidx = obj->cidx;
   while(cidx_cnt--) {
@@ -478,7 +478,7 @@ uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint3
 
     for(uint32_t sidx_offset = sidx_offset_init; sidx_offset < fs->sec_per_cluster; ++sidx_offset) {
       void *dat = fat32_bio_read(fs, sidx_base + sidx_offset);
-      uint32_t len = min(fs->byte_per_sector - byte_offset_init, buf_len - byte_cnt);
+      uint64_t len = min(fs->byte_per_sector - byte_offset_init, buf_len - byte_cnt);
       memcpy(buf + byte_cnt, dat + byte_offset_init, len);
       byte_cnt += len;
       if(byte_cnt == buf_len) {
@@ -630,7 +630,7 @@ void fat32_test(struct fat32_fs *fs) {
   char *pa = pmem_alloc(3); // 32K
   while(fat32_iter_next(fs, &iter, &obj)) {
     printf(obj.long_fn);
-    printf("\n");
+    printf(":");
     if(fat32_is_file(fs, &obj)) {
       fat32_read(fs, &obj, pa, PAGE_SIZE * POWER_OF_2(3), 0);
       cks1 = util_sum((uint8_t*)pa, obj.file_size);
@@ -642,7 +642,7 @@ void fat32_test(struct fat32_fs *fs) {
   fat32_iter_start(fs, &root, &iter);
   while(fat32_iter_next(fs, &iter, &obj)) {
     printf(obj.long_fn);
-    printf("\n");
+    printf(":");
     uint32_t fsz = obj.file_size;
     uint32_t offset = 0;
 
@@ -657,7 +657,7 @@ void fat32_test(struct fat32_fs *fs) {
   fat32_iter_start(fs, &root, &iter);
   while(fat32_iter_next(fs, &iter, &obj)) {
     printf(obj.long_fn);
-    printf("\n");
+    printf(":");
     uint32_t fsz = obj.file_size;
     uint32_t offset = 0;
 
