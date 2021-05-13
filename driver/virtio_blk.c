@@ -93,7 +93,7 @@ bool virtio_blk_wait(struct virtio_blk *blk, struct virtio_blk_req *req) {
   }
 
   // printf("used_idx:%l, desc_chain_id: %l\n", (uint64_t)blk->vq->used->idx, 
-        (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));
+  //      (uint64_t)(blk->vq->used->ring[blk->vq->used->idx -1].id));
   
   blk->vq->used_event[0] = blk->vq->used->idx;
   

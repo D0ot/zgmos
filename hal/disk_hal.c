@@ -18,7 +18,7 @@ struct disk_hal *disk_hal_init() {
   return disk;
 }
 
-bool disk_hal_read(struct disk_hal *params, uint32_t sector, void *buf) {
+bool disk_hal_read(struct disk_hal *params, uint64_t sector, void *buf) {
   struct virtio_blk *blk = params->dev;
   struct virtio_blk_req req;
   req.sector = sector;
@@ -27,7 +27,7 @@ bool disk_hal_read(struct disk_hal *params, uint32_t sector, void *buf) {
   return virtio_blk_wait(blk, &req);
 }
 
-bool disk_hal_write(struct disk_hal *params, uint32_t sector, void *buf) {
+bool disk_hal_write(struct disk_hal *params, uint64_t sector, void *buf) {
   struct virtio_blk *blk = params->dev;
   struct virtio_blk_req req;
   req.sector = sector;
