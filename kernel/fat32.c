@@ -56,7 +56,7 @@ void fat32_bio_writeback_no_check(struct fat32_fs *fs, uint32_t bidx) {
 // remove the selected buf from buf array
 // write back may occur
 void fat32_bio_remove(struct fat32_fs *fs, uint32_t bidx) {
-  printf("fat32_bio, sector %d at buf %d removed\n", fs->buf_sidx[bidx], bidx);
+  // printf("fat32_bio, sector %d at buf %d removed\n", fs->buf_sidx[bidx], bidx);
   if(fs->buf_flags[bidx] == FAT32_BIO_FLAG_DIRTY) {
     fat32_bio_writeback_no_check(fs, bidx);
   }
@@ -74,7 +74,7 @@ uint32_t fat32_bio_fetch(struct fat32_fs *fs, uint32_t sidx) {
   fs->buf_flags[bidx] = FAT32_BIO_FLAG_CLEAN;
   fs->buf_sidx[bidx] = sidx;
   list_add_tail(fs->buf_lists + bidx, &fs->buf_seq);
-  printf("fat32_bio, sector %d at buf %d add\n", sidx, bidx);
+  // printf("fat32_bio, sector %d at buf %d add\n", sidx, bidx);
   return bidx;
 }
 
