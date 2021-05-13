@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "../hal/disk_hal.h"
+#include "list.h"
 
 
 // abstruction file system operation
@@ -222,10 +223,13 @@ struct fat32_fs {
   // internal buffer
   //[buf_start_sidx, buf_end_sidx);
   void *buf;
-  uint32_t sec_per_buf;
-  uint32_t *buf_activity;
+  uint32_t buf_num;
+  //uint32_t *buf_activity;
   uint8_t *buf_flags;
   uint32_t *buf_sidx;
+  // buffer access sequence
+  struct list_head buf_seq;
+  struct list_head *buf_lists;
 
   // FOLLOWING IS CALCULATED PARAMS
 

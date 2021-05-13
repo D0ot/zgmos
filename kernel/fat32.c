@@ -1,5 +1,6 @@
 #include "fat32.h"
 #include "kmem.h"
+#include "list.h"
 #include "pmem.h"
 #include "earlylog.h" 
 #include "../hal/disk_hal.h" 
@@ -18,7 +19,7 @@ uint8_t *fat32_bio_bidx2addr(struct fat32_fs *fs, uint32_t bidx) {
 
 // return a buf index of the specifed sector
 uint32_t fat32_bio_match_buffered(struct fat32_fs *fs, uint32_t sidx) {
-  for(int i = 0; i < fs->sec_per_buf; ++i) {
+  for(int i = 0; i < fs->buf_num; ++i) {
     if(sidx == fs->buf_sidx[i] && fs->buf_flags[i] != FAT32_BIO_FLAG_INVALID) {
       return i;
     }
@@ -27,7 +28,7 @@ uint32_t fat32_bio_match_buffered(struct fat32_fs *fs, uint32_t sidx) {
 }
 
 uint32_t fat32_bio_match_unbuffered(struct fat32_fs *fs) {
-  for(int i = 0; i < fs->sec_per_buf; ++i) {
+  for(int i = 0; i < fs->buf_num; ++i) {
     if(fs->buf_flags[i] == FAT32_BIO_FLAG_INVALID) {
       return i;
     }
@@ -36,18 +37,14 @@ uint32_t fat32_bio_match_unbuffered(struct fat32_fs *fs) {
 }
 
 // return a lowest activity buf
+// it will be called only when there are no available buffer
 uint32_t fat32_bio_get_low_activity(struct fat32_fs *fs) {
-  uint32_t low_activity = 0xffffffff;
-  uint32_t buf_index = FAT32_BUF_INDEX_INVALID;
-  for(int i = 0; i < fs->sec_per_buf; ++i) {
-    if(fs->buf_flags[i] != FAT32_BIO_FLAG_INVALID) {
-      if(fs->buf_activity[i] <= low_activity) {
-        buf_index = i;
-        low_activity = fs->buf_activity[i];
-      }
-    }
-  }
-  return buf_index;
+  return fs->buf_seq.next - fs->buf_lists;
+}
+
+void fat32_bio_set_activity(struct fat32_fs *fs, uint32_t bbidx) {
+  list_del(fs->buf_lists + bbidx);
+  list_add_tail(fs->buf_lists + bbidx, &fs->buf_seq);
 }
 
 // no check, just writeback
@@ -59,11 +56,12 @@ void fat32_bio_writeback_no_check(struct fat32_fs *fs, uint32_t bidx) {
 // remove the selected buf from buf array
 // write back may occur
 void fat32_bio_remove(struct fat32_fs *fs, uint32_t bidx) {
+  printf("fat32_bio, sector %d at buf %d removed\n", fs->buf_sidx[bidx], bidx);
   if(fs->buf_flags[bidx] == FAT32_BIO_FLAG_DIRTY) {
     fat32_bio_writeback_no_check(fs, bidx);
   }
   fs->buf_flags[bidx] = FAT32_BIO_FLAG_INVALID;
-  fs->buf_activity[bidx] = 0;
+  list_del(fs->buf_lists + bidx);
 }
 
 uint32_t fat32_bio_fetch(struct fat32_fs *fs, uint32_t sidx) {
@@ -75,11 +73,13 @@ uint32_t fat32_bio_fetch(struct fat32_fs *fs, uint32_t sidx) {
   fs->disk->ops.read_op(fs->disk, sidx + fs->dsidx, fat32_bio_bidx2addr(fs, bidx));
   fs->buf_flags[bidx] = FAT32_BIO_FLAG_CLEAN;
   fs->buf_sidx[bidx] = sidx;
+  list_add_tail(fs->buf_lists + bidx, &fs->buf_seq);
+  printf("fat32_bio, sector %d at buf %d add\n", sidx, bidx);
   return bidx;
 }
 
 void fat32_bio_flush(struct fat32_fs *fs) {
-  for(int i = 0; i < fs->sec_per_buf; ++i) {
+  for(int i = 0; i < fs->buf_num; ++i) {
     if(fs->buf_flags[i] == FAT32_BIO_FLAG_DIRTY) {
       fat32_bio_writeback_no_check(fs, i);
     }
@@ -93,7 +93,7 @@ uint32_t fat32_bio_access(struct fat32_fs *fs, uint32_t cidx) {
     // no buffer of cidx found, do real IO
     bidx = fat32_bio_fetch(fs, cidx);
   }
-  fs->buf_activity[bidx]++;
+  fat32_bio_set_activity(fs, bidx);
   return bidx;
 }
 
@@ -119,7 +119,7 @@ uint32_t fat32_bio_read_copy(struct fat32_fs *fs, uint32_t cidx, uint32_t offset
     bidx = fat32_bio_fetch(fs, cidx);
   }
   memcpy(buf, fat32_bio_bidx2addr(fs, bidx) + offset, len);
-  fs->buf_activity[bidx]++;
+  fat32_bio_set_activity(fs, bidx);
   return len;
 }
 
@@ -134,7 +134,7 @@ uint32_t fat32_bio_write_copy(struct fat32_fs *fs, uint32_t cidx, uint32_t offse
 
   memcpy(fat32_bio_bidx2addr(fs, bidx) + offset, buf, len);
   fs->buf_flags[bidx] = FAT32_BIO_FLAG_DIRTY;
-  fs->buf_activity[bidx]++;
+  fat32_bio_set_activity(fs, bidx);
   return len;
 }
 
@@ -391,7 +391,11 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               iter->cur_byte_offset = (i + 32) % fs->byte_per_sector;
               iter->cur_sidx_offset = sidx_offset + ( (i + 32) / fs->byte_per_sector ? 1 : 0);
               iter->cur_cidx = cidx + ( (iter->cur_sidx_offset / fs->sec_per_cluster) ? 1 : 0);
-              iter->cur_sidx_offset = iter->cur_sidx_offset % fs->sec_per_cluster;
+              
+              if(iter->cur_sidx_offset / fs->sec_per_cluster) {
+                iter->cur_cidx = fat32_get_chain(fs, cidx);
+                iter->cur_sidx_offset = 0;
+              }
 
               return true;
             } else if((dat[i+11] & (FAT32_ATTR_VOLUME_ID | FAT32_ATTR_DIRECTORY)) == FAT32_ATTR_DIRECTORY) {
@@ -549,35 +553,44 @@ struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32
 
   fs->chain_per_sector = bpb->BytePerSec / sizeof(uint32_t);
 
-  fs->sec_per_buf = POWER_OF_2(buf_order) * PAGE_SIZE / fs->byte_per_sector;
+  fs->buf_num = POWER_OF_2(buf_order) * PAGE_SIZE / fs->byte_per_sector;
+
+  list_init(&fs->buf_seq);
 
   fs->cluster_num = (fs->byte_per_sector * fs->sec_per_table) / sizeof(uint32_t) - 2;
 
-  fs->buf_activity = kmalloc(sizeof(uint32_t) * fs->sec_per_buf * 2);
-  if(!fs->buf_activity) {
-    printf("fat32, buf_activity alloc failed\n");
+  fs->buf_sidx = kmalloc(sizeof(uint32_t) * fs->buf_num);
+  if(!fs->buf_sidx) {
+    printf("fat32, buf_sidx alloc failed\n");
     pmem_free(fs->buf);
     kfree(fs);
     return NULL;
   }
-  
-  fs->buf_sidx = fs->buf_activity + fs->sec_per_buf;
 
-  fs->buf_flags = kmalloc(sizeof(uint8_t) * fs->sec_per_buf);
+  fs->buf_flags = kmalloc(sizeof(uint8_t) * fs->buf_num);
   if(!fs->buf_flags) {
     printf("fat32, buf_flags alloc failed\n");
     pmem_free(fs->buf);
-    kfree(fs->buf_activity);
+    kfree(fs->buf_sidx);
     kfree(fs);
     return NULL;
   }
 
-  for(int i = 0; i < fs->sec_per_buf; ++i) {
-    fs->buf_flags[i] = FAT32_BIO_FLAG_INVALID;
-    fs->buf_sidx[i] = 0;
-    fs->buf_activity[i] = 0;
+  fs->buf_lists= kmalloc(sizeof(struct list_head) * fs->buf_num);
+  if(!fs->buf_lists) {
+    printf("fat32, buf_head_ptrs alloc failed\n");
+    pmem_free(fs->buf);
+    kfree(fs->buf_flags);
+    kfree(fs->buf_sidx);
+    kfree(fs);
+    return NULL;
   }
 
+  for(int i = 0; i < fs->buf_num; ++i) {
+    fs->buf_flags[i] = FAT32_BIO_FLAG_INVALID;
+    fs->buf_sidx[i] = 0;
+    list_init(fs->buf_lists + i);
+  }
 
   return fs;
 }
@@ -611,17 +624,48 @@ void fat32_test(struct fat32_fs *fs) {
   fat32_search_in_dir_entry(fs, &root, 3, &pos);
   struct fat32_directory_iter iter;
   fat32_iter_start(fs, &root, &iter);
-  struct fat32_obj tmp;
-  char *pa = pmem_alloc(0);
-  while(fat32_iter_next(fs, &iter, &tmp)) {
-    printf(tmp.long_fn);
+  struct fat32_obj obj;
+
+  uint32_t cks1;
+  char *pa = pmem_alloc(3); // 32K
+  while(fat32_iter_next(fs, &iter, &obj)) {
+    printf(obj.long_fn);
     printf("\n");
-    if(fat32_is_file(fs, &tmp)) {
-      fat32_read(fs, &tmp, pa, PAGE_SIZE, 0);
-      pa[PAGE_SIZE-1] = 0;
-      puts(pa);
-      printf("\n");
+    if(fat32_is_file(fs, &obj)) {
+      fat32_read(fs, &obj, pa, PAGE_SIZE * POWER_OF_2(3), 0);
+      cks1 = util_sum((uint8_t*)pa, obj.file_size);
+      printf("%d\n", cks1);
     }
+  }
+
+  char *pa2 = pmem_alloc(3);
+  fat32_iter_start(fs, &root, &iter);
+  while(fat32_iter_next(fs, &iter, &obj)) {
+    printf(obj.long_fn);
+    printf("\n");
+    uint32_t fsz = obj.file_size;
+    uint32_t offset = 0;
+
+    while(fat32_read(fs, &obj, pa2 + offset, 1, offset)){
+      offset += 1;
+    }
+    cks1 = util_sum((uint8_t*)pa2, obj.file_size);
+    printf("%d\n", cks1);
+  }
+
+  char *pa3 = pmem_alloc(3);
+  fat32_iter_start(fs, &root, &iter);
+  while(fat32_iter_next(fs, &iter, &obj)) {
+    printf(obj.long_fn);
+    printf("\n");
+    uint32_t fsz = obj.file_size;
+    uint32_t offset = 0;
+
+    while(fat32_read(fs, &obj, pa3 + offset, 333, offset)){
+      offset += 333;
+    }
+    cks1 = util_sum((uint8_t*)pa3, obj.file_size);
+    printf("%d\n", cks1);
   }
   while(1);
 }
