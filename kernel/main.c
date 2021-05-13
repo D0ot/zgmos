@@ -8,7 +8,7 @@
 #include "bootinfo.h"
 #include "pmem.h"
 #include "kmem.h"
-#include "vmem.h"
+#include "pte.h"
 #include "kvm.h"
 #include "riscv.h"
 #include "../driver/virtio.h"
@@ -31,7 +31,7 @@ int main(uint64_t hartid) {
     // kmalloc() and kfree() are avaliable
     kmem_init();
 
-    kpte = vmem_create();
+    kpte = pte_create();
     kvm_init(kpte);
     kvm_install(kpte);
 

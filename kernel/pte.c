@@ -1,4 +1,4 @@
-#include "vmem.h"
+#include "pte.h"
 #include "kustd.h"
 #include "defs.h"
 #include "pg.h"
@@ -7,7 +7,7 @@
 #include "utils.h"
 #include "pmem.h"
 
-pte_t *vmem_create() {
+pte_t *pte_create() {
   pte_t *p = pmem_alloc(0);
   if(p) {
     memset(p, 0, PAGE_SIZE);
@@ -15,11 +15,11 @@ pte_t *vmem_create() {
   return p;
 }
 
-void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
+void pte_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
   pte_t *p2 = p + VA_VPN2(va);
   pte_t xwrv2 = PTE_EXTRACT_XWRV(*p2);
 
-  if(page_size == VMEM_PAGE_4K) {
+  if(page_size == PTE_PAGE_4K) {
 
     if(xwrv2 == PTE_NON_LEAF) {
       pte_t *p1 = ((pte_t*)PTE_EXTRACT_NADDR(*p2)) + VA_VPN1(va);
@@ -69,7 +69,7 @@ void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
       KERNEL_PANIC();
     }
     
-  }else if(page_size == VMEM_PAGE_2M) {
+  }else if(page_size == PTE_PAGE_2M) {
     if(xwrv2 == PTE_NON_LEAF) {
       pte_t *p1 = ((pte_t*)PTE_EXTRACT_NADDR(*p2)) + VA_VPN1(va);
       pte_t xwrv1 = PTE_EXTRACT_XWRV(*p1);
@@ -93,7 +93,7 @@ void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
       KERNEL_PANIC();
     }
     
-  }else if(page_size == VMEM_PAGE_1G) {
+  }else if(page_size == PTE_PAGE_1G) {
     if(xwrv2 != PTE_INVALID) {
       // invalid va, it seems a remap?
       KERNEL_PANIC();
@@ -105,19 +105,19 @@ void vmem_map(pte_t *p, void *va, void *pa, uint64_t flags, int page_size) {
   }
 }
 
-void vmem_range_map(pte_t *p, void *va, void *pa, uint64_t flags, uint64_t length) {
+void pte_range_map(pte_t *p, void *va, void *pa, uint64_t flags, uint64_t length) {
   uint64_t offset;
   for(offset = 0; offset + POWER_OF_2(12) <= length; offset += POWER_OF_2(12)) {
-    vmem_map(p, va + offset, pa + offset, flags, VMEM_PAGE_4K);
+    pte_map(p, va + offset, pa + offset, flags, PTE_PAGE_4K);
   }
 
   if(offset < length) {
-    vmem_map(p, va + offset, pa + offset, flags, VMEM_PAGE_4K);
+    pte_map(p, va + offset, pa + offset, flags, PTE_PAGE_4K);
   }
 }
 
 
-void vmem_unmap(pte_t *p, void *va) {
+void pte_unmap(pte_t *p, void *va) {
   pte_t *p2 = p + VA_VPN2(va);
   pte_t xwrv2 = PTE_EXTRACT_XWRV(*p2);
   if(xwrv2 == PTE_INVALID) {
@@ -156,18 +156,18 @@ void vmem_unmap(pte_t *p, void *va) {
   }
 }
 
-void vmem_range_unmap(pte_t *p, void *va, int64_t length) {
+void pte_range_unmap(pte_t *p, void *va, int64_t length) {
   uint64_t offset;
   for(offset = 0; offset + POWER_OF_2(12) <= length; offset += POWER_OF_2(12)) {
-    vmem_unmap(p, va + offset);
+    pte_unmap(p, va + offset);
   }
 
   if(offset < length) {
-    vmem_unmap(p, va + offset);
+    pte_unmap(p, va + offset);
   }
 
 }
-void *vmem_walk(pte_t *p, void *va, uint64_t *flags, int *page_size) {
+void *pte_walk(pte_t *p, void *va, uint64_t *flags, int *page_size) {
   pte_t *p2 = p + VA_VPN2(va);
   pte_t xwrv2 = PTE_EXTRACT_XWRV(*p2);
   pte_t *res = NULL;
@@ -183,17 +183,17 @@ void *vmem_walk(pte_t *p, void *va, uint64_t *flags, int *page_size) {
 
       // 4KiB leaf
       res = p0;
-      pstmp = VMEM_PAGE_4K;
+      pstmp = PTE_PAGE_4K;
     } else {
       // 2MiB leaf
       res = p1;
-      pstmp = VMEM_PAGE_2M;
+      pstmp = PTE_PAGE_2M;
     }
 
   } else {
     // 1GiB leaf
     res = p2;
-    pstmp = VMEM_PAGE_1G;
+    pstmp = PTE_PAGE_1G;
   }
 
   if(page_size) {
@@ -206,7 +206,7 @@ void *vmem_walk(pte_t *p, void *va, uint64_t *flags, int *page_size) {
   return (void*)PTE_EXTRACT_NADDR(*res);
 }
 
-void vmem_destory(pte_t *p) {
+void pte_destory(pte_t *p) {
   for(int i = 0; i < 512; ++i) {
     if(PTE_EXTRACT_XWRV(p[i]) == PTE_NON_LEAF) {
       pte_t *p1 = (pte_t*)PTE_EXTRACT_NADDR(p[i]);
@@ -224,49 +224,49 @@ void vmem_destory(pte_t *p) {
 
 }
 
-void vmem_test() {
+void pte_test() {
   pte_t *p;
 
-  printf("VMEM_TEST >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
+  printf("PTE_TEST >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
   pmem_debug_stub();
 
-  p = vmem_create();
-  vmem_debug_print(p);
+  p = pte_create();
+  pte_debug_print(p);
   for(uint64_t i = 0; i < 1024; ++i) {
-    vmem_map(p, (void*)(i * PAGE_SIZE * 16), (void*)(i * PAGE_SIZE), PTE_RO_SET, VMEM_PAGE_4K);
+    pte_map(p, (void*)(i * PAGE_SIZE * 16), (void*)(i * PAGE_SIZE), PTE_RO_SET, PTE_PAGE_4K);
   }
 
-  vmem_debug_print(p);
+  pte_debug_print(p);
 
   for(uint64_t i = 0; i < 1024; ++i) {
-    vmem_unmap(p, (void*)(i * PAGE_SIZE * 16));
+    pte_unmap(p, (void*)(i * PAGE_SIZE * 16));
   }
   
-  vmem_debug_print(p);
+  pte_debug_print(p);
   
-  vmem_destory(p);
+  pte_destory(p);
 
-  p = vmem_create();
+  p = pte_create();
   for(uint64_t i = 0; i < 1024; ++i) {
-    vmem_map(p, (void*)(i * PAGE_SIZE * POWER_OF_2(10)), (void*)(i * PAGE_SIZE), PTE_RO_SET, VMEM_PAGE_2M);
+    pte_map(p, (void*)(i * PAGE_SIZE * POWER_OF_2(10)), (void*)(i * PAGE_SIZE), PTE_RO_SET, PTE_PAGE_2M);
   }
 
-  vmem_debug_print(p);
+  pte_debug_print(p);
 
   for(uint64_t i = 0; i < 1024; ++i) {
-    vmem_unmap(p, (void*)(i * PAGE_SIZE * POWER_OF_2(10)));
+    pte_unmap(p, (void*)(i * PAGE_SIZE * POWER_OF_2(10)));
   }
-  vmem_debug_print(p);
+  pte_debug_print(p);
 
-  vmem_destory(p);
+  pte_destory(p);
  
   pmem_debug_stub();
 
-  printf("VMEM_TEST <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
+  printf("PTE_TEST <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n");
 }
 
-void vmem_debug_print(pte_t *p) {
-  printf("VMEM_DEBUG_PRINT >>>>>>>>>>>>>>>>>>>>\n");
+void pte_debug_print(pte_t *p) {
+  printf("PTE_DEBUG_PRINT >>>>>>>>>>>>>>>>>>>>\n");
   printf("pte_t @ %x\n", p);
   for(int i = 0; i < 512; ++i) {
     if(PTE_EXTRACT_XWRV(p[i]) != PTE_INVALID) {
@@ -308,5 +308,5 @@ void vmem_debug_print(pte_t *p) {
     }
   }
 
-  printf("VMEM_DEBUG_PRINT <<<<<<<<<<<<<<<<<<<<\n");
+  printf("PTE_DEBUG_PRINT <<<<<<<<<<<<<<<<<<<<\n");
 }
