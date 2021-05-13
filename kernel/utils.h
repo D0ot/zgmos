@@ -49,5 +49,7 @@ inline static void *align_next(void *addr, uint64_t align) {
   return (void*)((t & ~(align - 1)) + (t & (align - 1) ? (align) : (0)));
 }
 
+uint32_t util_sum(uint8_t *buf, uint64_t len);
+
 
 #endif

@@ -159,3 +159,13 @@ uint64_t align_to(uint64_t x, uint64_t a)
 bool is_power_of_2(uint64_t n) {
   return !((n-1) & (n));
 }
+
+
+uint32_t util_sum(uint8_t *buf, uint64_t len) {
+  uint32_t s = 0;
+  for(uint64_t i = 0; i < len; ++i) {
+    s += buf[i];
+  }
+  uint32_t r = (s & 0xffff) + ((s & 0xffffffff) >> 16);
+  return (r & 0xffff) + (r >> 16);
+}
