@@ -1,7 +1,7 @@
 #ifndef __KVM_H_
 #define __KVM_H_
 
-#include "vmem.h"
+#include "pte.h"
 #include "pg.h"
 
 
