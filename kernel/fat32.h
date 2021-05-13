@@ -306,6 +306,12 @@ void fat32_iter_start(struct fat32_fs *fs, struct fat32_obj *parent, struct fat3
 // return false when there are no next 
 bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, struct fat32_obj *obj);
 
+// just file name, not path
+bool fat32_find_in_dir(struct fat32_fs *fs, struct fat32_obj *parent, char *fn, struct fat32_obj *obj);
+
+// path is the full path, no leading '/' and no trailing '/'
+bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, char *path, struct fat32_obj *obj);
+
 // name is the directory name
 bool fat32_mkdir(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
 
@@ -329,6 +335,7 @@ uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint6
 // buf_len max is 4096
 uint32_t fat32_write(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint64_t buf_len, uint64_t seek);
 
+void fat32_flush(struct fat32_fs *fs);
 
 
 // bio test

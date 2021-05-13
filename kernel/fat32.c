@@ -386,6 +386,8 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               }
 
               fat32_copy_name_short(entry, (uint8_t*)obj->short_fn);
+
+             
               
               obj->type = FAT32_OBJ_FILE;
               iter->cur_byte_offset = (i + 32) % fs->byte_per_sector;
@@ -396,7 +398,6 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
                 iter->cur_cidx = fat32_get_chain(fs, cidx);
                 iter->cur_sidx_offset = 0;
               }
-
               return true;
             } else if((dat[i+11] & (FAT32_ATTR_VOLUME_ID | FAT32_ATTR_DIRECTORY)) == FAT32_ATTR_DIRECTORY) {
               // found a directory
@@ -420,6 +421,7 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               iter->cur_sidx_offset = sidx_offset + ( (i + 32) / fs->byte_per_sector ? 1 : 0);
               iter->cur_cidx = cidx + ( (iter->cur_sidx_offset / fs->sec_per_cluster) ? 1 : 0);
               iter->cur_sidx_offset = iter->cur_sidx_offset % fs->sec_per_cluster;
+
               return true;
             } else if((dat[i+11] & (FAT32_ATTR_VOLUME_ID | FAT32_ATTR_DIRECTORY)) == FAT32_ATTR_VOLUME_ID) {
               // found a volume label
@@ -435,6 +437,56 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
     }
     sidx_offset_init = 0;
     cidx = fat32_get_chain(fs, cidx);
+  }
+  return false;
+}
+
+bool fat32_find_in_dir(struct fat32_fs *fs, struct fat32_obj *parent, char *fn, struct fat32_obj *obj) {
+  struct fat32_directory_iter iter;
+  fat32_iter_start(fs, parent, &iter);
+  while(fat32_iter_next(fs, &iter, obj)) {
+    if(strcmp(fn, obj->long_fn) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, char *path, struct fat32_obj *obj) {
+  uint32_t s = 0;
+  uint32_t e = 0;
+  char tmp;
+  
+  while(path[s]) {
+    while(path[e] && path[e] != '/') {
+      ++e;
+    }
+    
+    tmp = path[e];
+    path[e] = 0;
+    bool ret = fat32_find_in_dir(fs, parent, path + s, obj);
+    path[e] = tmp;
+    
+    if(ret) {
+      if(path[e] == '\0') {
+        return true;
+      }
+    }else {
+      break;
+    }
+
+    if(tmp == '\0') {
+      break;
+    }else {
+      s = ++e;
+    }
+
+    if(!fat32_is_directory(fs, obj)) {
+      break;
+    }else {
+      parent = obj;
+    }
+
   }
   return false;
 }
@@ -492,6 +544,10 @@ uint32_t fat32_read(struct fat32_fs *fs, struct fat32_obj *obj, void *buf, uint6
   return byte_cnt;
 }
 
+
+void fat32_flush(struct fat32_fs *fs) {
+  fat32_bio_flush(fs);
+}
 
 
 struct fat32_fs *fat32_init(struct disk_hal *disk, uint32_t start_sector, uint32_t total_sector, uint8_t buf_order) {
@@ -667,6 +723,14 @@ void fat32_test(struct fat32_fs *fs) {
     cks1 = util_sum((uint8_t*)pa3, obj.file_size);
     printf("%d\n", cks1);
   }
+
+  fat32_get(fs, &root, "nice/bro/file.c", &obj);
+  uint32_t sz = fat32_read(fs, &obj, pa3, 20, 0);
+  pa3[sz] = 0;
+  puts(pa3);
+  
+
+
   while(1);
 }
 
