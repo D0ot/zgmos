@@ -352,7 +352,7 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
         if(dat[i] == FAT32_DIRNAME_RES_FREE) {
           // the can not rely the semetic in the fat32 spec
           // if we adhere to fat32 spec, we shoud "break" here.
-          // because on linux, delete a file or directory is just mark the first byte of directory_entry as 0xe5;
+          // we did not, because on linux, delete a file or directory is just mark the first byte of directory_entry as 0xe5;
           continue;
         }
 
