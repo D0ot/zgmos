@@ -20,59 +20,58 @@
 #define VNODE_DEV   4
 
 struct vfs_backend {
+  // 
+  // all the functions below return int as error code
+  // 0 for success, other for failed
+  //
+
   struct list_head list;
 
   void *lfs;
   uint64_t lfs_obj_size;
 
   //  get root object
-  void *(*root)(void *fs);
+  int (*root)(void *lfs, void *lobj);
 
-  // open a file from a parent obj
-  void *(*open)(void *fs, void *p_obj, char *name);
-
-  // close the file
-  void (*close)(void *fs, void *obj);
-
-  // create a file
-  void (*create)(void *fs, void *p_obj, char *name);
+  // create a file, return error code
+  int (*create)(void *lfs, void *p_lobj, char *name);
 
   // delete the file
-  void (*unlink)(void *fs, void *obj);
+  int (*unlink)(void *lfs, void *lobj);
   
   // flush the whole fs
-  void (*flush)(void *fs);
+  int (*flush)(void *lfs);
 
   // make a dir
-  void (*mkdir)(void *fs, void *p_obj, char *name);
+  int (*mkdir)(void *lfs, void *p_lobj, char *name);
 
   // remove a dir
-  void (*rmdir)(void *fs, void *obj);
+  int (*rmdir)(void *lfs, void *p_lobj, void *lobj);
 
   // read from file
-  uint64_t (*read)(void *fs, void *obj, uint64_t offset, void *buf, uint64_t buf_len);
+  uint64_t (*read)(void *lfs, void *lobj, uint64_t offset, void *buf, uint64_t buf_len);
 
   // write to file
-  uint64_t (*write)(void *fs, void *obj, uint64_t offset, void *buf, uint64_t buf_len);
+  uint64_t (*write)(void *lfs, void *lobj, uint64_t offset, void *buf, uint64_t buf_len);
 
-  void (*trunate)(void *fs, void *obj, uint64_t new_sz);
-  void (*enlarge)(void *fs, void *obj, uint64_t new_sz);
+  int (*trunate)(void *lfs, void *lobj, uint64_t new_sz);
+  int (*enlarge)(void *lfs, void *lobj, uint64_t new_sz);
 
   // get file size
-  uint64_t (*size)(void *fs, void *obj);
+  uint64_t (*size)(void *lfs, void *lobj);
 
   // get file name
-  char *(*name)(void *fs, void *obj);
+  char *(*name)(void *lfs, void *lobj);
 
   // iterate through directory
   // while the iterate , this function will fill the memory to which the obj points
-  void *(*iterate)(void *fs, void *dir_obj, void *iter_obj, void *obj);
+  void *(*iterate)(void *lfs, void *dir_obj, void *iter_obj, void *lobj);
 
   // end the iterate, release the resources
-  void (*end_iterate)(void *fs, void *iter_obj);
+  void (*end_iterate)(void *lfs, void *iter_obj);
 
-  void (*lock)(void *fs);
-  void (*unlock)(void *fs);
+  void (*lock)(void *lfs);
+  void (*unlock)(void *lfs);
 };
 
 

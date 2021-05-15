@@ -232,9 +232,12 @@ struct vnode *vfs_root(struct vfs_t *vfs) {
 int64_t vfs_mount(struct vfs_t *vfs, struct vnode *node, struct vfs_backend bkd) {
   node->bkd = kmalloc(sizeof(struct vfs_backend));
   memcpy(node->bkd, &bkd, sizeof(struct vfs_backend));
-  node->lfs_obj = node->bkd->root(node->bkd->lfs);
+
+  node->lfs_obj = kmalloc(node->bkd->lfs_obj_size);
+  node->bkd->root(node->bkd->lfs, node->lfs_obj);
   node->type = VNODE_MP;
   list_add(&node->bkd->list, &vfs->bkd);
+  return 0;
 }
 
 int64_t vfs_umount(struct vfs_t *vfs, struct vnode *node) {
@@ -281,6 +284,9 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
   return NULL;
 }
 
+void vfs_unlink(struct vfs_t *vfs, struct vnode *node) {
+}
+
 void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
   struct vfs_block *blk = vbf_chkbufed(vfs, node, blkoff);
   if(blk) {
@@ -305,7 +311,7 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
   for(uint64_t blkoff = blkoff_init; blkoff <= blkoff_end; ++blkoff) {
     void *dest = vfs_access(vfs, node, blkoff);
     uint64_t len = min(VFS_BLOCK_SIZE, buf_len - byte_cnt);
-    memcpy(dest, buf, len);
+    memcpy(dest + byteoff, buf, len);
     byte_cnt += len;
     byteoff = 0;
   }
