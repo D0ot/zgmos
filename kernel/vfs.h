@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "list.h"
+#include <stdbool.h>
 
 #define VNODE_UNDEF 0
 
@@ -78,6 +79,9 @@ struct vfs_backend {
 struct vnode {
   struct list_head list;
 
+  // block buffer
+  struct list_head bbf;
+
   // parent vnode
   // if parent is NULL, it is a root node
   // root node has no name, no size, no name_len and
@@ -106,12 +110,22 @@ struct vnode {
   struct vfs_backend *bkd;
 };
 
+#define VFS_BLOCK_SIZE (PAGE_SIZE)
+
 struct vfs_block {
+  // used by vfs
+  struct list_head list_vfs;
+  // used by vnode
+  struct list_head list_vnode;
   void *buf;
   struct vnode *node;
   // number in block
-  uint32_t offset;
+  uint32_t blkoff;
+
+  // 0 is clean, 1 is dirty
+  uint32_t dirty;
 };
+
 
 
 struct vfs_t {
@@ -119,13 +133,54 @@ struct vfs_t {
   struct list_head bkd;
 
   // in vfs, one buffer is 4KiB
-  struct list_head buffer;
-  uint32_t buffer_count;
-  uint32_t buffer_max;
+  
+  struct list_head bbf_used;
+  struct list_head bbf_free;
+  uint32_t bbf_used_cnt;
+  uint32_t bbf_free_cnt;
+
+  uint32_t bbf_total_max;
 };
+
+// only alloc the memory, other things are not touched, only called by vbf_* series functions
+struct vfs_block *vblk_alloc();
+// only free the memory, other things are not touched, only called by vbf_* series functions
+void vblk_free(struct vfs_block *blk);
+
+// this function is called after vbf_borrow
+void vbf_bind(struct vfs_block *blk, struct vnode *node, uint32_t blkoff);
+
+struct vfs_block *vbf_chkbufed(struct vfs_t *vfs, struct vnode *node, uint32_t blkoff);
+
+// this function is called before vbf_return
+void vbf_unbind(struct vfs_block *blk);
+
+
+// flush the block into backend
+void vbf_flush(struct vfs_block *blk);
+
+void vbf_activate(struct vfs_t *vfs, struct vfs_block *blk);
+
+
+// bind must be called after this function call
+// use this function to get a unbind vfs_block
+struct vfs_block *vbf_borrow(struct vfs_t *vfs);
+
+// unbind must be called before this function call
+// use this function to return a unbind vfs_block
+void vbf_return(struct vfs_t *vfs, struct vfs_block *blk);
+
+// free all free block
+void vbf_shrink(struct vfs_t *vfs);
+
 
 void vnode_add(struct vnode* node, struct vnode *parent, void *lfs_obj);
 
+
+void vfs_buffer(struct vfs_t *vfs, struct vnode *node, uint32_t blkoff);
+
+void vfs_unbuffer(struct vfs_t *vfs, struct vfs_block *blk);
+void vfs_unbuffer_all(struct vfs_t *vfs, struct vnode *node);
 
 struct vfs_t *vfs_init(uint32_t buffer_max);
 
@@ -144,6 +199,8 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node);
 
+void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t offset);
+
 uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len);
 
 uint64_t vfs_write(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len);
@@ -153,9 +210,12 @@ void vfs_mkdir(struct vfs_t *vfs, struct vnode *node, char *name);
 void vfs_rmdir(struct vfs_t *vfs, struct vnode *node);
 
 // if node == NULL, flush all vfs
+// do writeback on specifed node
 void vfs_flush(struct vfs_t *vfs, struct vnode *node);
 
-// release some of the buffer used
-void vfs_squash(struct vfs_t *);
+
+// release some of the buffer
+void vfs_shrink(struct vfs_t *vfs);
+
 
 #endif // __VFS_H_

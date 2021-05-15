@@ -1,7 +1,86 @@
 #include "vfs.h"
 #include "kmem.h"
 #include "kustd.h"
+#include "pmem.h"
+#include "defs.h"
+#include "utils.h"
 
+struct vfs_block *vblk_alloc() {
+  struct vfs_block *blk = kmalloc(sizeof(struct vfs_block));
+  blk->buf = pmem_alloc(0);
+  return blk;
+}
+
+void vblk_free(struct vfs_block *blk) {
+  pmem_free(blk->buf);
+  kfree(blk);
+}
+
+void vbf_bind(struct vfs_block *blk, struct vnode *node, uint32_t blkoff) {
+  blk->node = node;
+  blk->blkoff = blkoff;
+  blk->dirty = 0;
+  list_add(&blk->list_vnode, &node->bbf);
+  node->bkd->read(node->bkd->lfs, node->lfs_obj, blkoff * VFS_BLOCK_SIZE, blk->buf, VFS_BLOCK_SIZE);
+}
+void vbf_unbind(struct vfs_block *blk) {
+  vbf_flush(blk); 
+  list_del(&blk->list_vnode);
+}
+
+void vbf_flush(struct vfs_block *blk) {
+  if(!blk->dirty) {
+    return;
+  }
+  struct vnode *node = blk->node;
+  node->bkd->write(node->bkd->lfs, node->lfs_obj, blk->blkoff * VFS_BLOCK_SIZE, blk->buf, VFS_BLOCK_SIZE);
+  blk->dirty = 0;
+}
+
+void vbf_activate(struct vfs_t *vfs, struct vfs_block *blk) {
+  list_del(&blk->list_vfs);
+  list_add_tail(&blk->list_vfs, &vfs->bbf_used);
+}
+
+struct vfs_block *vbf_borrow(struct vfs_t *vfs) {
+  struct vfs_block *blk = NULL;
+  if(vfs->bbf_free_cnt > 0) {
+    // there are some blocks which are free, just use
+    blk = container_of(&vfs->bbf_free.next, struct vfs_block, list_vfs);
+    list_del(&blk->list_vfs);
+    vfs->bbf_free_cnt--;
+    list_add_tail(&blk->list_vfs, &vfs->bbf_used);
+    vfs->bbf_used_cnt++;
+  }else if(vfs->bbf_used_cnt < vfs->bbf_total_max) {
+    blk = vblk_alloc();
+    vfs->bbf_used_cnt++;
+    list_add_tail(&blk->list_vfs, &vfs->bbf_used);
+  }else {
+    blk = container_of(&vfs->bbf_used.next, struct vfs_block, list_vfs);
+    list_del(&blk->list_vfs);
+    vbf_unbind(blk);
+    list_add_tail(&blk->list_vfs, &vfs->bbf_used);
+  }
+  return blk;
+}
+
+void vbf_return(struct vfs_t *vfs, struct vfs_block *blk) {
+  list_del(&blk->list_vfs);
+  list_add(&blk->list_vfs, &vfs->bbf_free);
+  vfs->bbf_free_cnt++;
+  vfs->bbf_used_cnt--;
+}
+
+
+void vbf_shrink(struct vfs_t *vfs) {
+  struct list_head *iter, *n;
+  struct vfs_block *blk;
+  list_for_each_safe(iter, n, &vfs->bbf_free) {
+    blk = container_of(iter, struct vfs_block, list_vfs);
+    pmem_free(blk->buf);
+    list_del(iter);
+  }
+}
 
 // refresh size, name
 void vnode_ref(struct vnode *node) {
@@ -26,6 +105,36 @@ void vnode_add(struct vnode *node, struct vnode *parent, void *lfs_obj) {
   list_init(&node->children);
 }
 
+// check if a block is buffered
+struct vfs_block *vbf_chkbufed(struct vfs_t *vfs, struct vnode *node, uint32_t blkoff) {
+  struct list_head *iter;
+  struct vfs_block *blk;
+  list_for_each(iter, &node->bbf) {
+    blk = container_of(iter, struct vfs_block, list_vnode);
+    if(blk->blkoff == blkoff) {
+      return blk;
+    }
+  }
+  return NULL;
+}
+
+void vfs_buffer(struct vfs_t *vfs, struct vnode *node, uint32_t blkoff) {
+  struct vfs_block *blk = vbf_borrow(vfs);
+  vbf_bind(blk, node, blkoff);
+}
+
+void vfs_unbuffer(struct vfs_t *vfs, struct vfs_block *blk) {
+  vbf_unbind(blk);
+  vbf_return(vfs, blk);
+}
+
+void vfs_unbuffer_all(struct vfs_t *vfs, struct vnode *node) {
+  struct list_head *pos, *n;
+  list_for_each_safe(pos, n, &node->bbf) {
+    struct vfs_block *blk = container_of(pos, struct vfs_block, list_vnode);
+    vfs_unbuffer(vfs, blk);
+  }
+}
 
 struct vfs_t *vfs_init(uint32_t buffer_max) {
 
@@ -43,9 +152,13 @@ struct vfs_t *vfs_init(uint32_t buffer_max) {
 
     list_init(&vfs->bkd);
 
-    list_init(&vfs->buffer);
-    vfs->buffer_count = 0;
-    vfs->buffer_max = buffer_max;
+    list_init(&vfs->bbf_free);
+    vfs->bbf_free_cnt = 0;
+
+    list_init(&vfs->bbf_used);
+    vfs->bbf_used_cnt = 0;
+
+    vfs->bbf_total_max = buffer_max;
   }
   return vfs;
 }
@@ -54,7 +167,6 @@ struct vfs_t *vfs_init(uint32_t buffer_max) {
 bool vfs_is_spaned(struct vnode *node) {
   return node->child_cnt >= 0;
 }
-
 
 // span the directory and do a search
 struct vnode *vfs_span_search(struct vnode *node, char *name) {
@@ -77,6 +189,7 @@ struct vnode *vfs_span_search(struct vnode *node, char *name) {
   return ret;
 }
 
+
 struct vnode *vfs_search(struct vnode *node, char *name) {
   struct list_head *iter;
   struct vnode *child;
@@ -87,6 +200,29 @@ struct vnode *vfs_search(struct vnode *node, char *name) {
     }
   }
   return NULL;
+}
+
+// can only be called on a directory
+// TODO, use a software stack to fold recursively
+// currently use a hardware stack, stackoverflow can occurs
+// TODO, how to fold a mount point
+void vfs_fold(struct vfs_t *vfs, struct vnode *node) {
+  struct list_head *iter, *n;
+  struct vnode *child;
+  list_for_each_safe(iter, n, &node->children) {
+    child = container_of(iter, struct vnode, list);
+    if(child->type == VNODE_DIR && vfs_is_spaned(node)) {
+      vfs_fold(vfs, child);
+    }
+
+    if(child->type == VNODE_FILE) {
+      vfs_unbuffer_all(vfs, child);
+    }
+    kfree(child->lfs_obj);
+    list_del(iter);
+    kfree(child);
+  }
+  node->child_cnt = -1;
 }
 
 struct vnode *vfs_root(struct vfs_t *vfs) {
@@ -122,7 +258,7 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
   struct vnode *p = parent;
   uint64_t s = 0;
   uint64_t e = 0;
-  while(p) {
+  while(p && path[s]) {
     while(path[e] && path[e] != '\\');
 
     if(path[e] == 0) {
@@ -132,10 +268,50 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
     if(path[e] == '\\') {
       char tmp = path[e];
       path[e] = 0;
-      p = vfs_get(vfs, p, 
+      p = vfs_get(vfs, p, path + s);
+      path[e] = tmp;
     }
+    s = ++e;
 
+  }
+  
+  if(p->type == VNODE_DIR || p->type == VNODE_DEV) {
+    return p;
   }
   return NULL;
 }
 
+void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
+  struct vfs_block *blk = vbf_chkbufed(vfs, node, blkoff);
+  if(blk) {
+    vbf_activate(vfs, blk);
+    return blk->buf;
+  }
+  blk = vbf_borrow(vfs);
+  vbf_bind(blk, node, blkoff);
+  return blk;
+}
+
+uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
+  
+  // read can not exceed the file size
+  buf_len = min(buf_len, node->size - offset);
+
+  uint64_t blkoff_init = offset / VFS_BLOCK_SIZE;
+  uint64_t blkoff_end = node->size / VFS_BLOCK_SIZE;
+  uint64_t byteoff = offset % VFS_BLOCK_SIZE;
+  uint64_t byte_cnt = 0;
+
+  for(uint64_t blkoff = blkoff_init; blkoff <= blkoff_end; ++blkoff) {
+    void *dest = vfs_access(vfs, node, blkoff);
+    uint64_t len = min(VFS_BLOCK_SIZE, buf_len - byte_cnt);
+    memcpy(dest, buf, len);
+    byte_cnt += len;
+    byteoff = 0;
+  }
+  return byte_cnt;
+}
+
+void vfs_shrink(struct vfs_t *vfs) {
+  vbf_shrink(vfs);
+}
