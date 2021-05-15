@@ -22,6 +22,7 @@ struct vfs_backend {
   struct list_head list;
 
   void *lfs;
+  uint64_t lfs_obj_size;
 
   //  get root object
   void *(*root)(void *fs);
@@ -53,14 +54,18 @@ struct vfs_backend {
   // write to file
   uint64_t (*write)(void *fs, void *obj, uint64_t offset, void *buf, uint64_t buf_len);
 
+  void (*trunate)(void *fs, void *obj, uint64_t new_sz);
+  void (*enlarge)(void *fs, void *obj, uint64_t new_sz);
+
   // get file size
   uint64_t (*size)(void *fs, void *obj);
 
   // get file name
-  uint64_t (*name)(void *fs, void *obj, void *name_buf);
+  char *(*name)(void *fs, void *obj);
 
   // iterate through directory
-  void *(*iterate)(void *fs, void *dir_obj, void *iter_obj);
+  // while the iterate , this function will fill the memory to which the obj points
+  void *(*iterate)(void *fs, void *dir_obj, void *iter_obj, void *obj);
 
   // end the iterate, release the resources
   void (*end_iterate)(void *fs, void *iter_obj);
@@ -87,14 +92,11 @@ struct vnode {
   // max size is 4GiB
   uint32_t size;
 
+  uint32_t type;
+
   // vnode name
   char *name;
 
-  // the length of name
-  uint16_t name_len;
-  
-  // vnode type
-  uint16_t type;
 
   // THE FOLLOWING IS FOR backend
   // lower fs
@@ -104,17 +106,28 @@ struct vnode {
   struct vfs_backend *bkd;
 };
 
+struct vfs_block {
+  void *buf;
+  struct vnode *node;
+  // number in block
+  uint32_t offset;
+};
+
 
 struct vfs_t {
   struct vnode root;
   struct list_head bkd;
 
+  // in vfs, one buffer is 4KiB
+  struct list_head buffer;
+  uint32_t buffer_count;
+  uint32_t buffer_max;
 };
 
-void vnode_init(struct vnode* node, struct vfs_backend *bkd, struct vnode *parent);
+void vnode_add(struct vnode* node, struct vnode *parent, void *lfs_obj);
 
 
-struct vfs_t *vfs_init();
+struct vfs_t *vfs_init(uint32_t buffer_max);
 
 struct vnode *vfs_root(struct vfs_t *vfs);
 
@@ -125,11 +138,9 @@ int64_t vfs_umount(struct vfs_t *vfs, struct vnode *node);
 
 void vfs_create(struct vfs_t *vfs, struct vnode *parent, char *name);
 
-// open means it is buffered
-struct vnode *vfs_open(struct vfs_t *vfs, struct vnode *parent, char *name);
+struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name);
 
-// close means it is not buffered
-void vfs_close(struct vfs_t *vfs, struct vnode *node);
+struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *path);
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node);
 
@@ -141,6 +152,10 @@ void vfs_mkdir(struct vfs_t *vfs, struct vnode *node, char *name);
 
 void vfs_rmdir(struct vfs_t *vfs, struct vnode *node);
 
-void vfs_flush(struct vfs_t *vfs);
+// if node == NULL, flush all vfs
+void vfs_flush(struct vfs_t *vfs, struct vnode *node);
+
+// release some of the buffer used
+void vfs_squash(struct vfs_t *);
 
 #endif // __VFS_H_
