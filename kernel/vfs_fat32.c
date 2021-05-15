@@ -41,9 +41,7 @@ uint64_t fat32_vfs_read(void *lfs, void *lobj, uint64_t offset, void *buf, uint6
   return fat32_read(fs, obj, buf, buf_len, offset);
 }
 uint64_t fat32_vfs_write(void *lfs, void *lobj, uint64_t offset, void *buf, uint64_t buf_len) {
-  DEF_FAT32FS;
-  DEF_FAT32_OBJ;
-  return fat32_write(fs, obj, buf, buf_len, offset);
+  return 0;
 }
 
 int fat32_vfs_trunate(void *lfs, void *lobj, uint64_t new_sz);

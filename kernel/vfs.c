@@ -5,6 +5,7 @@
 #include "defs.h"
 #include "utils.h"
 
+
 struct vfs_block *vblk_alloc() {
   struct vfs_block *blk = kmalloc(sizeof(struct vfs_block));
   blk->buf = pmem_alloc(0);
@@ -92,7 +93,7 @@ void vnode_add(struct vnode *node, struct vnode *parent, void *lfs_obj) {
   node->bkd = parent->bkd;
   node->parent = parent;
   
-  list_add(&node->list, &parent->list);
+  list_add(&node->list, &parent->children);
   
   node->lfs_obj = lfs_obj;
   vnode_ref(node);
@@ -194,7 +195,7 @@ struct vnode *vfs_search(struct vnode *node, char *name) {
   struct list_head *iter;
   struct vnode *child;
   list_for_each(iter, &node->children) {
-    child = container_of(iter, struct vnode, children);
+    child = container_of(iter, struct vnode, list);
     if(strcmp(child->name, name) == 0) {
       return child;
     }
