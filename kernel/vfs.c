@@ -182,7 +182,7 @@ struct vnode *vfs_span_search(struct vnode *node, char *name) {
     // if iter is not NULL, the obj is valid
     struct vnode *child = kmalloc(sizeof(struct vnode));
     vnode_add(child, node, obj);
-    if(name && strcmp(name, child->name) == 0) {
+    if(name && (strcmp(name, child->name) == 0)) {
       ret = child;
     }
     obj = kmalloc(node->bkd->lfs_obj_size);
@@ -282,8 +282,6 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
 }
 
 struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *path) {
-  
-
   struct vnode *p = parent;
   uint64_t s = 0;
   uint64_t e = 0;
@@ -349,6 +347,25 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
     byteoff = 0;
   }
   return byte_cnt;
+}
+
+struct vnode* vfs_iterate(struct vfs_t *vfs, struct vnode *parent, struct vnode *last) {
+  if(last) {
+    if(last->list.next != &(last->parent->children)) {
+      return container_of(last->list.next, struct vnode, list);
+    }else {
+      return NULL;
+    }
+  }else{
+    if(!vfs_is_spaned(parent)) {
+      vfs_span_search(parent, NULL);
+    }
+    if(parent->child_cnt) {
+      return container_of(parent->children.next, struct vnode, list);
+    }else {
+      return NULL;
+    }
+  }
 }
 
 void vfs_shrink(struct vfs_t *vfs) {

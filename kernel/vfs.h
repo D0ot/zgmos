@@ -209,6 +209,8 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
 
 uint64_t vfs_write(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len);
 
+struct vnode* vfs_iterate(struct vfs_t *vfs, struct vnode *parent, struct vnode *last);
+
 void vfs_mkdir(struct vfs_t *vfs, struct vnode *node, char *name);
 
 void vfs_rmdir(struct vfs_t *vfs, struct vnode *node);
