@@ -3,7 +3,7 @@
 swtch:
   sd sp, (0 * 8)(a0)
   sd gp, (1 * 8)(a0)
-  sd tp, (2 * 8)(a0)
+  # sd tp, (2 * 8)(a0)
   sd s0, (3 * 8)(a0)
   sd s1, (4 * 8)(a0)
   sd s2, (5 * 8)(a0)
@@ -20,7 +20,7 @@ swtch:
  
   ld sp, (0 * 8)(a1)
   ld gp, (1 * 8)(a1)
-  ld tp, (2 * 8)(a1)
+  # ld tp, (2 * 8)(a1)
   ld s0, (3 * 8)(a1)
   ld s1, (4 * 8)(a1)
   ld s2, (5 * 8)(a1)

@@ -89,7 +89,7 @@ pte_t task_aux_map_flags(Elf64_Word seg_flags) {
     return 0;
   }
 
-  flags |= PTE_V_SET;
+  flags |= PTE_V_SET | PTE_U_SET;
 
   return flags;
 }
@@ -115,13 +115,21 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   task->state = TASK_RUNNABLE;
   
   if(!image) {
-    return NULL;
+    goto user_pte_failed;
   }
 
   task->user_pte = pte_create();
   if(!task->user_pte) {
     goto user_pte_failed;
   }
+
+  task->kstack_pa = pmem_alloc(1);
+  if(!task->kstack_pa) {
+    goto kstack_failed;
+  }
+
+  // map stack page
+  pte_range_map(task->user_pte, (void*)PROC_VA_KSTACK, task->kstack_pa, PTE_RW_SET, PAGE_SIZE * 2);
   
   // ELF LOADER
   Elf64_Ehdr *ehdr = kmalloc(sizeof(Elf64_Ehdr));
@@ -162,7 +170,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
       goto last_failed;
     }
 
-    for(int i = 0; i < once_load; ++i) {
+    for(int i = 0; i < to_load; ++i) {
       // check if it is a LOAD segment
       if(phdr[i].p_type != PT_LOAD) {
         continue;
@@ -195,13 +203,15 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
         if(!pg) {
           goto in_load_fail;
         }
-        // load
-        uint64_t len = min(phdr[i].p_filesz - byte_cnt, PAGE_SIZE - byte_offset_init);
-        if(len != vfs_read(global_vfs, image, phdr[i].p_offset + byte_cnt, (void*)(pg->pa + byte_cnt), len)) {
-          goto in_load_fail;
+        // load, if filesz reached, we only alloc the page, and do not load
+        if(byte_cnt < phdr[i].p_filesz) {
+          uint64_t len = min(phdr[i].p_filesz - byte_cnt, PAGE_SIZE - byte_offset_init);
+          if(len != vfs_read(global_vfs, image, phdr[i].p_offset + byte_cnt, (void*)(pg->pa + byte_offset_init), len)) {
+            goto in_load_fail;
+          }
+          byte_cnt += len;
+          byte_offset_init = 0;
         }
-        byte_cnt += len;
-        byte_offset_init = 0;
       }
 
     }
@@ -222,6 +232,8 @@ phdr_failed:
   kfree(ehdr);
 ehdr_failed:
   pte_destory(task->user_pte);
+kstack_failed:
+  pmem_free(task->kstack_pa);
 user_pte_failed:
   kfree(task);
 task_failed:

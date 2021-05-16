@@ -93,7 +93,7 @@ static const uint64_t TASK_ZOMBIE = 4;
 #define PROC_VA_KSTACK          (PROC_VA_GUARD - PAGE_SIZE * 2)
 
 // the addres put into the sp register
-#define PROC_VA_KSTACK_LOAD     (PROC_VA_GUARD - 32)
+#define PROC_VA_KSTACK_SP       (PROC_VA_GUARD - 32)
 
 // guard page
 #define PROC_VA_GUARD2          (PROC_VA_KSTACK - PAGE_SIZE)
@@ -130,8 +130,8 @@ struct task_struct{
   // child process
   struct list_head children;
 
-  // task kernel stack
-  void *kstack;
+  // task kernel stack pa, the va is fixed
+  void *kstack_pa;
 
   // entry address
   void *entry;
