@@ -104,6 +104,7 @@ void vnode_add(struct vnode *node, struct vnode *parent, void *lfs_obj) {
 
   vnode_ref(node);
   list_init(&node->children);
+  list_init(&node->bbf);
 }
 
 // check if a block is buffered
@@ -305,11 +306,11 @@ void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
   struct vfs_block *blk = vbf_chkbufed(vfs, node, blkoff);
   if(blk) {
     vbf_activate(vfs, blk);
-    return blk->buf;
+  }else {
+    blk = vbf_borrow(vfs);
+    vbf_bind(blk, node, blkoff);
   }
-  blk = vbf_borrow(vfs);
-  vbf_bind(blk, node, blkoff);
-  return blk;
+  return blk->buf;
 }
 
 uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
@@ -322,13 +323,13 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
   uint64_t blkoff_init = offset / VFS_BLOCK_SIZE;
   uint64_t byteoff = offset % VFS_BLOCK_SIZE;
   uint64_t byte_cnt = 0;
-  void *dest;
   uint64_t len;
+  void *dat;
 
   for(uint64_t blkoff = blkoff_init; byte_cnt != buf_len; ++blkoff) {
-    dest = vfs_access(vfs, node, blkoff);
+    dat = vfs_access(vfs, node, blkoff);
     len = min(VFS_BLOCK_SIZE - byteoff, buf_len - byte_cnt);
-    memcpy(dest + byteoff, buf + byte_cnt, len);
+    memcpy(buf +byte_cnt , dat + byteoff, len);
     byte_cnt += len;
     byteoff = 0;
   }
