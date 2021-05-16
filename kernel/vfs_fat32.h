@@ -21,6 +21,8 @@ int fat32_vfs_trunate(void *fs, void *lobj, uint64_t new_sz);
 int fat32_vfs_enlarge(void *fs, void *lobj, uint64_t new_sz);
 uint64_t fat32_vfs_size(void *fs, void *lobj);
 char *fat32_vfs_name(void *fs, void *lobj);
+uint32_t fat32_vfs_type(void *fs, void *lobj);
+
 void *fat32_vfs_iterate(void *fs, void *dir_obj, void *iter_obj, void *lobj);
 void fat32_vfs_end_iterate(void *fs, void *iter_obj);
 void fat32_vfs_lock(void *fs);

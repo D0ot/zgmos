@@ -269,6 +269,11 @@ uint32_t fat32_copy_name_short(struct fat32_dir_entry *short_dir, uint8_t *buf) 
   for(; i < 8 && short_dir->Name[i] != 0x20; ++i) {
     buf[j++] = short_dir->Name[i];
   }
+  
+  if(short_dir->Name[5] == ' ') {
+    buf[j++] = 0;
+    return j;
+  }
 
   buf[j++] = '.';
 
@@ -312,6 +317,23 @@ uint32_t fat32_copy_name_long(struct fat32_long_name_entry *long_dir, uint8_t *b
     buf[j++] = long_dir->Name3[i];
   }
   buf[j++] = 0;
+  return j;
+}
+
+uint32_t fat32_name_s2l(uint8_t *lfn, uint8_t *sfn) {
+  int i = 0;
+  int j = 0;
+  while(i < 5 && sfn[i] != ' ') {
+    lfn[j++] = sfn[i++];
+  }
+  if(sfn[5] != ' ') {
+    lfn[j++] = '.';
+    i = 5;
+    while(i < 8 && sfn[i] != ' ') {
+      lfn[j++] = sfn[i++];
+    }
+  }
+  lfn[j++] = 0;
   return j;
 }
 
@@ -405,16 +427,32 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
               struct fat32_dir_entry *entry = (struct fat32_dir_entry*)(dat + i);
               obj->cidx = ((uint32_t)entry->FstClusHI << 16) + entry->FstClusLO;
 
+              fat32_copy_name_short(entry, (uint8_t*)obj->short_fn);
               if(flag) {
                 char *buf = obj->long_fn;
                 for(int j = fn_num; j < FAT32_LONG_FN_STACK_NUM; ++j) {
                   buf = strcpy_end(buf, (void*)fns[j]);
                 }
               }else {
-                obj->long_fn[0] = 0;
-              }
+                if(obj->short_fn[0] == '.') {
+                  obj->long_fn[0] = '.';
 
-              fat32_copy_name_short(entry, (uint8_t*)obj->short_fn);
+                  if(obj->short_fn[1] == '.') {
+                    obj->long_fn[1] = '.';
+                    obj->long_fn[2] = 0;
+
+                    // specail case, when dotdot is root directory
+                    if(obj->cidx == 0) {
+                      obj->cidx = fs->root_cidx;
+                    }
+                  } else {
+                    obj->long_fn[1] = 0;
+                  }
+
+                } else {
+                  fat32_name_s2l((uint8_t*)obj->long_fn, (uint8_t*)obj->short_fn);
+                }
+              }
 
               obj->type = FAT32_OBJ_DIRECTORY;
               iter->cur_byte_offset = (i + 32) % fs->byte_per_sector;

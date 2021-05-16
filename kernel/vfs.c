@@ -87,6 +87,7 @@ void vbf_shrink(struct vfs_t *vfs) {
 void vnode_ref(struct vnode *node) {
   node->size = node->bkd->size(node->bkd->lfs, node->lfs_obj);
   node->name = node->bkd->name(node->bkd->lfs, node->lfs_obj);
+  node->type = node->bkd->type(node->bkd->lfs, node->lfs_obj);
 }
 
 void vnode_add(struct vnode *node, struct vnode *parent, void *lfs_obj) {
@@ -96,13 +97,12 @@ void vnode_add(struct vnode *node, struct vnode *parent, void *lfs_obj) {
   list_add(&node->list, &parent->children);
   
   node->lfs_obj = lfs_obj;
-  vnode_ref(node);
 
   // if it is directory
   // -1 means, the node is not updated from lower file system
   node->child_cnt = -1;
-  node->type = VNODE_UNDEF;
 
+  vnode_ref(node);
   list_init(&node->children);
 }
 
@@ -231,6 +231,9 @@ struct vnode *vfs_root(struct vfs_t *vfs) {
 }
 
 int64_t vfs_mount(struct vfs_t *vfs, struct vnode *node, struct vfs_backend bkd) {
+  if(!node) {
+    node = &vfs->root;
+  }
   node->bkd = kmalloc(sizeof(struct vfs_backend));
   memcpy(node->bkd, &bkd, sizeof(struct vfs_backend));
 
@@ -238,6 +241,8 @@ int64_t vfs_mount(struct vfs_t *vfs, struct vnode *node, struct vfs_backend bkd)
   node->bkd->root(node->bkd->lfs, node->lfs_obj);
   node->type = VNODE_MP;
   list_add(&node->bkd->list, &vfs->bkd);
+
+  node->type = VNODE_MP;
   return 0;
 }
 
@@ -251,6 +256,10 @@ void vfs_create(struct vfs_t *vfs, struct vnode *parent, char *name) {
 }
 
 struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
+  if(parent->type != VNODE_DIR && parent->type != VNODE_MP) {
+    return NULL;
+  }
+
   if(vfs_is_spaned(parent)) {
     return vfs_search(parent, name);
   }else {
@@ -263,13 +272,15 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
   uint64_t s = 0;
   uint64_t e = 0;
   while(p && path[s]) {
-    while(path[e] && path[e] != '\\');
+    while(path[e] && path[e] != '/') {
+      e++;
+    }
 
     if(path[e] == 0) {
       return vfs_get(vfs, p, path + s);
     }
     
-    if(path[e] == '\\') {
+    if(path[e] == '/') {
       char tmp = path[e];
       path[e] = 0;
       p = vfs_get(vfs, p, path + s);
@@ -286,6 +297,8 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
 }
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node) {
+  //TODO
+  while(1);
 }
 
 void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
@@ -300,19 +313,22 @@ void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
 }
 
 uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
-  
+  if(offset >= node->size) {
+    return 0;
+  }
   // read can not exceed the file size
   buf_len = min(buf_len, node->size - offset);
 
   uint64_t blkoff_init = offset / VFS_BLOCK_SIZE;
-  uint64_t blkoff_end = node->size / VFS_BLOCK_SIZE;
   uint64_t byteoff = offset % VFS_BLOCK_SIZE;
   uint64_t byte_cnt = 0;
+  void *dest;
+  uint64_t len;
 
-  for(uint64_t blkoff = blkoff_init; blkoff <= blkoff_end; ++blkoff) {
-    void *dest = vfs_access(vfs, node, blkoff);
-    uint64_t len = min(VFS_BLOCK_SIZE, buf_len - byte_cnt);
-    memcpy(dest + byteoff, buf, len);
+  for(uint64_t blkoff = blkoff_init; byte_cnt != buf_len; ++blkoff) {
+    dest = vfs_access(vfs, node, blkoff);
+    len = min(VFS_BLOCK_SIZE - byteoff, buf_len - byte_cnt);
+    memcpy(dest + byteoff, buf + byte_cnt, len);
     byte_cnt += len;
     byteoff = 0;
   }

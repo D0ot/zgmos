@@ -2,7 +2,7 @@
 #include "fat32.h"
 #include "kmem.h"
 #include "kustd.h"
-
+#include "vfs.h"
 
 #define DEF_FAT32FS \
   struct fat32_fs *fs = lfs
@@ -57,6 +57,18 @@ char *fat32_vfs_name(void *lfs, void *lobj) {
   return fat32_get_obj_name(obj);
 }
 
+uint32_t fat32_vfs_type(void *lfs, void *lobj) {
+  DEF_FAT32FS;
+  DEF_FAT32_OBJ;
+  if(fat32_is_file(fs, obj)) {
+    return VNODE_FILE;
+  }else if(fat32_is_directory(fs, obj)) {
+    return VNODE_DIR;
+  }else {
+    return VNODE_UNDEF;
+  }
+}
+
 void *fat32_vfs_iterate(void *lfs, void *dir_obj, void *iter_obj, void *lobj) {
   DEF_FAT32FS;
   DEF_FAT32_OBJ;
@@ -93,6 +105,7 @@ struct vfs_backend fat32bkd(struct fat32_fs *lfs) {
   bkd.write = fat32_vfs_write;
   bkd.size = fat32_vfs_size;
   bkd.name = fat32_vfs_name;
+  bkd.type = fat32_vfs_type;
   bkd.iterate = fat32_vfs_iterate;
   bkd.end_iterate = fat32_vfs_end_iterate;
 

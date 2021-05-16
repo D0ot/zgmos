@@ -63,6 +63,11 @@ struct vfs_backend {
   // get file name
   char *(*name)(void *lfs, void *lobj);
 
+  // get file type
+  uint32_t (*type)(void *fs, void *lobj);
+  
+
+
   // iterate through directory
   // while the iterate , this function will fill the memory to which the obj points
   void *(*iterate)(void *lfs, void *dir_obj, void *iter_obj, void *lobj);
