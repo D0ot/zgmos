@@ -41,11 +41,14 @@ struct trapframe {
   uint64_t sp;
   uint64_t gp;
   uint64_t tp;
+
   uint64_t t0;
   uint64_t t1;
   uint64_t t2;
+
   uint64_t s0; //fp
   uint64_t s1;
+
   uint64_t a0;
   uint64_t a1;
   uint64_t a2;
@@ -54,6 +57,7 @@ struct trapframe {
   uint64_t a5;
   uint64_t a6;
   uint64_t a7;
+
   uint64_t s2;
   uint64_t s3;
   uint64_t s4;
@@ -64,6 +68,7 @@ struct trapframe {
   uint64_t s9;
   uint64_t s10;
   uint64_t s11;
+
   uint64_t t3;
   uint64_t t4;
   uint64_t t5;
@@ -72,6 +77,8 @@ struct trapframe {
   uint64_t epc;
   uint64_t kernel_satp;
   uint64_t kernel_sp;
+  uint64_t hartid;
+  uint64_t utrap_entry;
 };
 
 
@@ -83,7 +90,7 @@ static const uint64_t TASK_ZOMBIE = 4;
 // last page is not used, and the last page is also a guard page
 #define PROC_VA_END             (0xfffff000)
 
-// trampoline page
+// trampoline code page
 #define PROC_VA_TRAMPOLINE      (PROC_VA_END - PAGE_SIZE)
 
 // guard  page
@@ -91,15 +98,22 @@ static const uint64_t TASK_ZOMBIE = 4;
 
 // a process has a 8KiB kernel stack, this is the start address
 #define PROC_VA_KSTACK          (PROC_VA_GUARD - PAGE_SIZE * 2)
-
 // the addres put into the sp register
 #define PROC_VA_KSTACK_SP       (PROC_VA_GUARD - 32)
 
-// guard page
+// guard page 
 #define PROC_VA_GUARD2          (PROC_VA_KSTACK - PAGE_SIZE)
 
+// trapframe
+#define PROC_VA_TRAPFRAME       (PROC_VA_GUARD2 - PAGE_SIZE)
+
 // the page address of the last page which is user avaliable
-#define PROC_VA_USER_MAX        (PROC_VA_GUARD2 - PAGE_SIZE)
+#define PROC_VA_USER_MAX        (PROC_VA_TRAPFRAME - PAGE_SIZE)
+
+// the user stack
+#define PROC_VA_USTACK          (PROC_VA_USER_MAX - PAGE_SIZE)
+#define PROC_VA_USTACK_SP       (PROC_VA_USER_MAX - 32)
+
 
 // it is 4K in size;
 struct task_page{
@@ -132,6 +146,9 @@ struct task_struct{
 
   // task kernel stack pa, the va is fixed
   void *kstack_pa;
+
+  // user stack
+  void *ustack_pa;
 
   // entry address
   void *entry;

@@ -96,10 +96,15 @@ pte_t task_aux_map_flags(Elf64_Word seg_flags) {
 
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent) {
+
+  if(!image) {
+    goto after_none;
+  }
+
   // alloc space for struct task_struct
   struct task_struct *task = kmalloc(sizeof(struct task_struct));
   if(!task) {
-    goto task_failed;
+    goto after_none;
   }
 
   list_init(&task->children);
@@ -111,42 +116,50 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
     list_add(&task->ubp, &parent->children);
   }
 
-
-  task->state = TASK_RUNNABLE;
-  
-  if(!image) {
-    goto user_pte_failed;
-  }
-
   task->user_pte = pte_create();
   if(!task->user_pte) {
-    goto user_pte_failed;
+    goto after_task;
   }
 
+  task->tfp = pmem_alloc(0);
+  if(!task->tfp) {
+    goto after_pte;
+  }
+  pte_map(task->user_pte, (void*)PROC_VA_TRAPFRAME, task->tfp, PTE_RW_SET, PTE_PAGE_4K);
+
+  // currently not used
   task->kstack_pa = pmem_alloc(1);
   if(!task->kstack_pa) {
-    goto kstack_failed;
+    goto after_tfp;
   }
-
-  // map stack page
+  // map stack page, currently not used
   pte_range_map(task->user_pte, (void*)PROC_VA_KSTACK, task->kstack_pa, PTE_RW_SET, PAGE_SIZE * 2);
+
+  
+  task->ustack_pa = pmem_alloc(0);
+  if(!task->ustack_pa) {
+    goto after_kstack;
+  }
+  pte_map(task->user_pte, (void*)PROC_VA_USTACK, task->ustack_pa, PTE_RW_SET | PTE_U_SET, PTE_PAGE_4K);
+
+
   
   // ELF LOADER
   Elf64_Ehdr *ehdr = kmalloc(sizeof(Elf64_Ehdr));
   if(!ehdr) {
-    goto ehdr_failed;
+    goto after_ustack;
   }
   
 
   uint64_t cnt = vfs_read(global_vfs, image, 0, (void*)(ehdr), sizeof(Elf64_Ehdr));
 
   if(cnt != sizeof(Elf64_Ehdr)) {
-    goto phdr_failed;
+    goto after_ehdr;
   }
 
   // check a lots of thing here
   if(!task_aux_check_elf(ehdr)) {
-    goto phdr_failed;
+    goto after_ehdr;
   }
 
   __auto_type phcnt = 0;
@@ -157,7 +170,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   // we load 4 program header once
   Elf64_Phdr *phdr = pmem_alloc(0);
   if(!phdr) {
-    goto phdr_failed;
+    goto after_ehdr;
   }
 
   
@@ -167,7 +180,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
     uint64_t byte_read = vfs_read(global_vfs, image, offset, phdr, sizeof(Elf64_Phdr) * to_load);
 
     if(byte_read != sizeof(Elf64_Phdr) * to_load) {
-      goto last_failed;
+      goto in_load_fail;
     }
 
     for(int i = 0; i < to_load; ++i) {
@@ -178,7 +191,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
 
       // we can not load page which is not 4KiB aligned
       if(phdr[i].p_align != PAGE_SIZE) {
-        goto last_failed;
+        goto in_load_fail;
       }
 
       pte_t flags = task_aux_map_flags(phdr[i].p_flags);
@@ -221,22 +234,31 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   }
 
   task->entry = (void*)ehdr->e_entry;
+  task->state = TASK_RUNNABLE;
+
+  task->tfp->sp = PROC_VA_USTACK_SP;
+  
 
   return task;
 
 in_load_fail:
   task_remove_all_page(task);
-last_failed:
-  pmem_free(phdr);
-phdr_failed:
+// comment to supress warning
+// after_phdr:
+  kfree(phdr);
+after_ehdr:
   kfree(ehdr);
-ehdr_failed:
-  pte_destory(task->user_pte);
-kstack_failed:
+after_ustack:
+  pmem_free(task->ustack_pa);
+after_kstack:
   pmem_free(task->kstack_pa);
-user_pte_failed:
+after_tfp:
+  pmem_free(task->tfp);
+after_pte:
+  pte_destory(task->user_pte);
+after_task:
   kfree(task);
-task_failed:
+after_none:
   printf("process, create process failed\n");
   return NULL;
   
