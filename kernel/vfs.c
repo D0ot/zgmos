@@ -149,6 +149,8 @@ struct vfs_t *vfs_init(uint32_t buffer_max) {
     vfs->root.child_cnt = -1;
     vfs->root.type = VNODE_UNDEF;
 
+    vfs->root.parent = &vfs->root;
+
     list_init(&vfs->root.list);
     list_init(&vfs->root.children);
 
@@ -261,6 +263,17 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
     return NULL;
   }
 
+  static char *dot = ".";
+  static char *dotdot = "..";
+
+  if(strcmp(dot, name) == 0){
+    return parent;
+  }
+
+  if(strcmp(dotdot, name) == 0){
+    return parent->parent;
+  }
+
   if(vfs_is_spaned(parent)) {
     return vfs_search(parent, name);
   }else {
@@ -269,6 +282,8 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
 }
 
 struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *path) {
+  
+
   struct vnode *p = parent;
   uint64_t s = 0;
   uint64_t e = 0;
@@ -291,7 +306,7 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *p
 
   }
   
-  if(p->type == VNODE_DIR || p->type == VNODE_DEV) {
+  if(p->type == VNODE_DIR || p->type == VNODE_MP) {
     return p;
   }
   return NULL;
