@@ -5,6 +5,7 @@
 #include "list.h"
 #include <stdbool.h>
 
+
 #define VNODE_UNDEF 0
 
 // oridinary file
@@ -18,6 +19,7 @@
 
 // device file
 #define VNODE_DEV   4
+
 
 struct vfs_backend {
   // 
@@ -145,6 +147,11 @@ struct vfs_t {
 
   uint32_t bbf_total_max;
 };
+
+
+extern struct vfs_t *global_vfs;
+
+
 
 // only alloc the memory, other things are not touched, only called by vbf_* series functions
 struct vfs_block *vblk_alloc();

@@ -5,6 +5,8 @@
 #include "defs.h"
 #include "utils.h"
 
+struct vfs_t *global_vfs;
+
 
 struct vfs_block *vblk_alloc() {
   struct vfs_block *blk = kmalloc(sizeof(struct vfs_block));

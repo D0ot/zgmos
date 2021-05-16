@@ -130,6 +130,9 @@ typedef struct {
 #define PT_LOPROC   0x70000000
 #define PT_HIPROC   0x7fffffff
 
+#define PF_X        0x01
+#define PF_W        0x02
+#define PF_R        0x04
 
 
 #endif // __ELF_H_
