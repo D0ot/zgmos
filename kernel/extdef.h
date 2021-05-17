@@ -26,7 +26,13 @@ EXTDEF(_ram_end, RAM_END);
 EXTDEF(_sbi_start, SBI_START);
 EXTDEF(_sbi_end, SBI_END);
 
+EXTDEF(_uvec_start, UVEC_START);
+EXTDEF(_uvec_end, UVEC_END);
+
 
 extern void kvec_asm();
+
+extern char uvec_enter_asm[];
+extern char uvec_ret_asm[];
 
 #endif // __EXTDEF_H_

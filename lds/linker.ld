@@ -25,7 +25,14 @@ SECTIONS
     PROVIDE(_kernel_start = ABSOLUTE(.) );
     PROVIDE(_text_start = ABSOLUTE(.) );
     KEEP( *(.text.start) )
+
+    
     *(.text .text.*)
+    . = ALIGN(4K);
+    PROVIDE(_uvec_start = ABSOLUTE(.) );
+    KEEP( *(.uvec) )
+    . = ALIGN(4K);
+    PROVIDE(_uvec_end = ABSOLUTE(.) );
   }
 
   . = ALIGN(4K);

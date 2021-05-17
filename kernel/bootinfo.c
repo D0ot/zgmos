@@ -17,6 +17,7 @@ void print_bootinfo(uint64_t hartid) {
 
   printf("kernel: %x ~ %x\n", KERNEL_START, KERNEL_END);
   printf("text: %x ~ %x\n", TEXT_START, TEXT_END);
+  printf("\tuvec: %x ~ %x\n", UVEC_START, UVEC_END);
   printf("rodata: %x ~  %x\n", RODATA_START, RODATA_END);
   printf("data: %x ~  %x\n", DATA_START, DATA_END);
   printf("bss: %x ~  %x\n", BSS_START, BSS_END);
