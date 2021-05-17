@@ -9,9 +9,10 @@
 #include "elf.h"
 #include "earlylog.h"
 #include "utils.h"
+#include "riscv.h"
+#include "uvec.h"
+#include "extdef.h"
 
-struct task_struct *current_task() {
-}
 
 bool task_aux_check_elf(Elf64_Ehdr *ehdr) {
   // check magic
@@ -123,6 +124,8 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   if(!task->user_pte) {
     goto after_task;
   }
+  pte_map(task->user_pte, (void*)PROC_VA_TRAMPOLINE, (void*)UVEC_START, PTE_XR_SET, PTE_PAGE_4K);
+
 
   task->tfp = pmem_alloc(0);
   if(!task->tfp) {
@@ -130,13 +133,11 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   }
   pte_map(task->user_pte, (void*)PROC_VA_TRAPFRAME, task->tfp, PTE_RW_SET, PTE_PAGE_4K);
 
-  // currently not used
+
   task->kstack_pa = pmem_alloc(1);
   if(!task->kstack_pa) {
     goto after_tfp;
   }
-  // map stack page, currently not used
-  pte_range_map(task->user_pte, (void*)PROC_VA_KSTACK, task->kstack_pa, PTE_RW_SET, PAGE_SIZE * 2);
 
   
   task->ustack_pa = pmem_alloc(0);
@@ -241,7 +242,20 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
 
   task->tfp->sp = PROC_VA_USTACK_SP;
   
+  task->ctx.ra = (uint64_t)task_create_ret;
+  task->ctx.sp = (uint64_t)(task->kstack_pa + PAGE_SIZE * 2);
 
+  task->tfp->hartid = get_hartid();
+  task->tfp->kernel_sp = task->kstack_pa + PAGE_SIZE;
+  task->tfp->kernel_satp = r_satp();
+  task->tfp->utrap_entry = (uint64_t)utrap_entry;
+  task->tfp->epc = ehdr->e_entry;
+
+  // argc, argv
+  //
+  ((uint64_t*)task->ustack_pa)[0] = 0;
+  ((uint64_t*)task->ustack_pa)[1] = 0;
+  
   return task;
 
 in_load_fail:
@@ -265,6 +279,10 @@ after_none:
   printf("process, create process failed\n");
   return NULL;
   
+}
+
+void task_create_ret() {
+  utrap_ret();
 }
 
 void task_destroy(struct task_struct *task) {
@@ -319,3 +337,13 @@ void task_remove_all_page(struct task_struct *task) {
 void tasK_add(struct task_struct *task);
 void task_del(struct task_struct *task);
 
+
+// not exposed to public
+struct task_struct *global_task[HART_NUM];
+
+struct task_struct *task_get_current() {
+  return global_task[get_hartid()];
+}
+void task_set_current(struct task_struct *task) {
+  global_task[get_hartid()] = task;
+}

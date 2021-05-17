@@ -2,6 +2,7 @@
 #define __DEFS_H_
 
 #define PAGE_SIZE (4096)
+#define HART_NUM (2)
 
 
 

@@ -7,6 +7,7 @@
 #include "defs.h"
 #include "vfs.h"
 
+
 struct context {
 
   // stack pointer
@@ -35,6 +36,8 @@ struct context {
   // return address
   uint64_t ra;
 };
+
+void swtch(struct context *oldctx, struct context *newctx);
 
 struct trapframe {
   uint64_t ra;
@@ -159,6 +162,8 @@ struct task_struct{
   // and it is on kstack
   struct trapframe *tfp;
 
+  struct context ctx;
+
   // user page table
   pte_t *user_pte;
 
@@ -175,9 +180,8 @@ struct task_struct{
   int exit_status;
 };
 
-struct task_struct *current_task();
-
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent);
+void task_create_ret();
 void task_destroy(struct task_struct *task);
 
 // alloc a page for the process
@@ -194,5 +198,9 @@ void task_remove_all_page(struct task_struct *task);
 
 void tasK_add(struct task_struct *task);
 void task_del(struct task_struct *task);
+
+
+struct task_struct *task_get_current();
+void task_set_current(struct task_struct *task);
 
 #endif // __PROCESS_H_

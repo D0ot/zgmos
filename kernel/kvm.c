@@ -5,6 +5,7 @@
 #include "pte.h"
 #include "riscv.h"
 #include "../driver/virtio.h"
+#include "process.h"
 
 
 void kvm_init(pte_t *kp) {
@@ -22,6 +23,10 @@ void kvm_init(pte_t *kp) {
 
   // map rest ram
   pte_range_map(kp, BSS_END, BSS_END, PTE_RW_SET, RAM_END - BSS_END);
+
+
+  // map trampoline
+  pte_map(kp, (void*)PROC_VA_TRAMPOLINE, UVEC_START, PTE_XR_SET, PTE_PAGE_4K);
 
 
 #ifdef QEMU

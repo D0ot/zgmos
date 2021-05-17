@@ -13,14 +13,24 @@
 #include "riscv.h"
 #include "../driver/virtio.h"
 #include "../driver//virtio_blk.h"
+#include "fat32.h"
+#include "vfs_fat32.h"
+#include "vfs.h"
+#include "process.h"
 
 volatile static int started = 0;
 pte_t* kpte;
+
+struct context schectx;
 
 int main(uint64_t hartid) {
   set_hartid(hartid);
 
   if (hartid == 0) {
+    w_stvec((uint64_t)kvec_asm);
+    s_sstatus(SSTATUS_SIE);
+    s_sie(SIE_SSIE | SIE_STIE);
+
     printf_lock_init();
     printf("hart %d enter main()...\n", hartid);
     // Print LOGO.
@@ -36,10 +46,31 @@ int main(uint64_t hartid) {
     kvm_install(kpte);
 
 
-    w_stvec((uint64_t)kvec_asm);
-    s_sstatus(SSTATUS_SIE);
-    s_sie(SIE_SSIE | SIE_STIE);
-    sbi_legacy_set_timer(r_time() + 30000000);
+    //sbi_legacy_set_timer(r_time() + 30000000);
+
+
+    
+    struct disk_hal *hal = disk_hal_init();
+
+    struct fat32_fs *fs = fat32_init(hal, 0, 0, 1);
+
+    struct vfs_t *vfs = vfs_init(10);
+    global_vfs = vfs;
+
+    struct vfs_backend bkd = fat32bkd(fs);
+
+    vfs_mount(vfs, vfs_root(vfs), bkd);
+
+
+    struct vnode *image = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/brk");
+    struct task_struct *task = task_create(image, NULL);
+
+    pte_debug_print(task->user_pte);
+    
+    task_set_current(task);
+    swtch(&schectx, &task->ctx);
+
+    while(1);
 
     printf("hart %d init done\n", hartid);
     // muticore start
