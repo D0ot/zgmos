@@ -10,6 +10,9 @@
 #include "earlylog.h"
 #include "utils.h"
 
+struct task_struct *current_task() {
+}
+
 bool task_aux_check_elf(Elf64_Ehdr *ehdr) {
   // check magic
   if(ehdr->e_ident[EI_MAG0] != ELFMAG0  ||

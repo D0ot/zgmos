@@ -1,7 +1,7 @@
-.section .text.uvec
-.global uvec_enter
-.align 32
-uvec_enter:
+.section .uvec
+.global uvec_enter_asm
+.align 5
+uvec_enter_asm:
   csrrw a0, sscratch, a0
 
   # ra sp gp tp
@@ -77,10 +77,10 @@ uvec_enter:
 
 
 
-.global uvec_ret
+.global uvec_ret_asm
 # a0: trapframe va, should saved in sscratch
 # a1: the user satp value
-uvec_ret:
+uvec_ret_asm:
 
   csrw satp, a1
 

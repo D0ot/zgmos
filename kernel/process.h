@@ -175,6 +175,8 @@ struct task_struct{
   int exit_status;
 };
 
+struct task_struct *current_task();
+
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent);
 void task_destroy(struct task_struct *task);
 
@@ -182,7 +184,7 @@ void task_destroy(struct task_struct *task);
 // caller must ensure the va is 4K aligned
 // return new pages pa
 struct task_page *task_add_page(struct task_struct *task, void *va, pte_t flags);
-// free a pge for the proces
+// free a page for the proces
 // caller must ensure the va is 4K aligned
 bool task_remove_page(struct task_struct *task, void *va);
 
