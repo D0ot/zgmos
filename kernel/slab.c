@@ -122,7 +122,7 @@ void slab_destory_static(slab_t *slab) {
 void slab_static_init() {
   // STATIC PHYSICAL PAGE ALLOC
   void *pg = pmem_alloc(SLAB_STATIC_PAGE_ORDER);
-  slab_create_ex(&meta_slab, pg, sizeof(slab_t), POWER_OF_2(SLAB_STATIC_PAGE_ORDER));
+  slab_create_ex(&meta_slab, pg, sizeof(slab_t), SLAB_STATIC_PAGE_ORDER);
 }
 
 void slab_static_deinit() {
