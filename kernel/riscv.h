@@ -129,6 +129,7 @@ RISCV_CSR_FUNC(sscratch);
 RISCV_CSR_FUNC(sstatus);
 
 RISCV_CSR_R_FUNC(scause);
+RISCV_CSR_R_FUNC(stval);
 
 
 #endif

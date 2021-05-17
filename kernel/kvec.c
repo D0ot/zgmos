@@ -8,6 +8,7 @@
 
 void kvec() {
   uint64_t scause = r_scause();
+  uint64_t stval = r_stval();
   uint64_t spp = r_sstatus() & SSTATUS_SPP;
 
   if(spp == 0) {
@@ -20,6 +21,7 @@ void kvec() {
     printf("timer!\n");
   } else {
     // unhandled interrupt or exception
+    printf("unhandled interrupt, sscause: %l, sstval: %l\n", scause, stval);
     KERNEL_PANIC();
   }
 }
