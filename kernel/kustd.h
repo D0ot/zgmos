@@ -22,7 +22,7 @@ void putchar(char ch);
 char *strcpy(char *dest, const char *src);
 char *strcpy_end(char *dest, const char *src);
 void *memset(void *ptr, uint8_t value, uint64_t num);
-int strcmp(char *s1, char *s2);
+int strcmp(const char *s1, const char *s2);
 void *memcpy(void *dest, const void *src, size_t num);
 void *memmove(void *dest, const void *src, size_t num);
 size_t strlen(const char *str);

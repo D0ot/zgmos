@@ -490,23 +490,27 @@ bool fat32_find_in_dir(struct fat32_fs *fs, struct fat32_obj *parent, char *fn, 
   return false;
 }
 
-bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, char *path, struct fat32_obj *obj) {
+bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, const char *path, struct fat32_obj *obj) {
   uint32_t s = 0;
   uint32_t e = 0;
   char tmp;
+
+  char *const path_buf = kmalloc(strlen(path) + 1);
+  strcpy(path_buf, path);
   
-  while(path[s]) {
-    while(path[e] && path[e] != '/') {
+  while(path_buf[s]) {
+    while(path_buf[e] && path_buf[e] != '/') {
       ++e;
     }
     
-    tmp = path[e];
-    path[e] = 0;
-    bool ret = fat32_find_in_dir(fs, parent, path + s, obj);
-    path[e] = tmp;
+    tmp = path_buf[e];
+    path_buf[e] = 0;
+    bool ret = fat32_find_in_dir(fs, parent, path_buf + s, obj);
+    path_buf[e] = tmp;
     
     if(ret) {
-      if(path[e] == '\0') {
+      if(path_buf[e] == '\0') {
+        kfree(path_buf);
         return true;
       }
     }else {
@@ -526,6 +530,8 @@ bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, char *path, struct
     }
 
   }
+
+  kfree(path_buf);
   return false;
 }
 
@@ -737,7 +743,6 @@ void fat32_test(struct fat32_fs *fs) {
   while(fat32_iter_next(fs, &iter, &obj)) {
     printf(obj.long_fn);
     printf(":");
-    uint32_t fsz = obj.file_size;
     uint32_t offset = 0;
 
     while(fat32_read(fs, &obj, pa2 + offset, 1, offset)){
@@ -752,7 +757,6 @@ void fat32_test(struct fat32_fs *fs) {
   while(fat32_iter_next(fs, &iter, &obj)) {
     printf(obj.long_fn);
     printf(":");
-    uint32_t fsz = obj.file_size;
     uint32_t offset = 0;
 
     while(fat32_read(fs, &obj, pa3 + offset, 333, offset)){

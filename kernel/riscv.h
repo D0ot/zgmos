@@ -69,6 +69,16 @@ static inline uint64_t r_time() {
   return ret;
 }
 
+static inline uint64_t r_gp() {
+  uint64_t ret;
+  asm volatile("mv %0, gp": "=r"(ret));
+  return ret;
+}
+
+static inline void w_gp(uint64_t x) {
+  asm volatile("mv gp, %0" : : "r"(x));
+}
+
 // USER = user
 // SUPV = supervisor
 
@@ -108,6 +118,7 @@ RISCV_DEF_BIT(SIE, SEIE, 9);
 RISCV_DEF_BIT(SIP, SSIE, 1);
 RISCV_DEF_BIT(SIP, STIE, 5);
 RISCV_DEF_BIT(SIP, SEIE, 9);
+
 
 RISCV_CSR_FUNC(satp);
 RISCV_CSR_FUNC(sip);

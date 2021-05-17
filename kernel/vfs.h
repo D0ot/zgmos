@@ -204,9 +204,9 @@ int64_t vfs_umount(struct vfs_t *vfs, struct vnode *node);
 
 void vfs_create(struct vfs_t *vfs, struct vnode *parent, char *name);
 
-struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name);
+struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, const char *name);
 
-struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *path);
+struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const char *path);
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node);
 

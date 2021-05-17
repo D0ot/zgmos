@@ -175,7 +175,7 @@ bool vfs_is_spaned(struct vnode *node) {
 }
 
 // span the directory and do a search
-struct vnode *vfs_span_search(struct vnode *node, char *name) {
+struct vnode *vfs_span_search(struct vnode *node, const char *name) {
   void *obj = kmalloc(node->bkd->lfs_obj_size);
   void *iter = node->bkd->iterate(node->bkd->lfs, node->lfs_obj, NULL, obj);
   struct vnode *ret = NULL;
@@ -196,7 +196,7 @@ struct vnode *vfs_span_search(struct vnode *node, char *name) {
 }
 
 
-struct vnode *vfs_search(struct vnode *node, char *name) {
+struct vnode *vfs_search(struct vnode *node, const char *name) {
   struct list_head *iter;
   struct vnode *child;
   list_for_each(iter, &node->children) {
@@ -260,7 +260,7 @@ void vfs_create(struct vfs_t *vfs, struct vnode *parent, char *name) {
   while(1);
 }
 
-struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
+struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, const char *name) {
   if(parent->type != VNODE_DIR && parent->type != VNODE_MP) {
     return NULL;
   }
@@ -283,33 +283,41 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, char *name) {
   }
 }
 
-struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, char *path) {
+struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const char *path) {
   struct vnode *p = parent;
+  struct vnode *ret = NULL;
   uint64_t s = 0;
   uint64_t e = 0;
-  while(p && path[s]) {
-    while(path[e] && path[e] != '/') {
+  uint64_t len = strlen(path);
+  char *const path_buf = kmalloc(len + 1);
+  path_buf[len] = '\0';
+  strcpy(path_buf, path);
+  while(p && path_buf[s]) {
+    while(path_buf[e] && path_buf[e] != '/') {
       e++;
     }
 
-    if(path[e] == 0) {
-      return vfs_get(vfs, p, path + s);
+    if(path_buf[e] == 0) {
+      ret = vfs_get(vfs, p, path_buf + s);
+      break;
     }
     
-    if(path[e] == '/') {
-      char tmp = path[e];
-      path[e] = 0;
-      p = vfs_get(vfs, p, path + s);
-      path[e] = tmp;
+    if(path_buf[e] == '/') {
+      char tmp = path_buf[e];
+      path_buf[e] = 0;
+      p = vfs_get(vfs, p, path_buf + s);
+      path_buf[e] = tmp;
     }
     s = ++e;
 
   }
   
-  if(p->type == VNODE_DIR || p->type == VNODE_MP) {
-    return p;
+  // if the path is like "dir1/dir2/", we return vnode of dir2
+  if( (path_buf[len - 1] == '/') && (p->type == VNODE_DIR || p->type == VNODE_MP)) {
+    ret = p;
   }
-  return NULL;
+  kfree(path_buf);
+  return ret;
 }
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node) {

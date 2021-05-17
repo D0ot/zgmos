@@ -310,7 +310,7 @@ bool fat32_iter_next(struct fat32_fs *fs, struct fat32_directory_iter *iter, str
 bool fat32_find_in_dir(struct fat32_fs *fs, struct fat32_obj *parent, char *fn, struct fat32_obj *obj);
 
 // path is the full path, no leading '/' and no trailing '/'
-bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, char *path, struct fat32_obj *obj);
+bool fat32_get(struct fat32_fs *fs, struct fat32_obj *parent, const char *path, struct fat32_obj *obj);
 
 // name is the directory name
 bool fat32_mkdir(struct fat32_fs *fs, struct fat32_obj *parent_dir, char *name);
