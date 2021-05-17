@@ -30,29 +30,28 @@ uvec_enter_asm:
   sd a7, (16* 8)(a0)
 
   # s2 ~ s11
-  sd s0, (17* 8)(a0)
-  sd s2, (18* 8)(a0)
-  sd s3, (19* 8)(a0)
-  sd s4, (20* 8)(a0)
-  sd s5, (21* 8)(a0)
-  sd s6, (22* 8)(a0)
-  sd s7, (23* 8)(a0)
-  sd s8, (24* 8)(a0)
-  sd s9, (25* 8)(a0)
-  sd s10,(26* 8)(a0)
-  sd s11,(27* 8)(a0)
+  sd s2, (17* 8)(a0)
+  sd s3, (18* 8)(a0)
+  sd s4, (19* 8)(a0)
+  sd s5, (20* 8)(a0)
+  sd s6, (21* 8)(a0)
+  sd s7, (22* 8)(a0)
+  sd s8, (23* 8)(a0)
+  sd s9, (24* 8)(a0)
+  sd s10,(25* 8)(a0)
+  sd s11,(26* 8)(a0)
 
   # t3 ~ t6
-  sd t3, (28* 8)(a0)
-  sd t4, (29* 8)(a0)
-  sd t5, (30* 8)(a0)
-  sd t6, (31* 8)(a0)
+  sd t3, (27* 8)(a0)
+  sd t4, (28* 8)(a0)
+  sd t5, (29* 8)(a0)
+  sd t6, (30* 8)(a0)
 
-# epc         32 *8
-# kernel_satp 33 *8
-# kernel_sp   34 *8
-# hartid      35 *8
-# utrap_entry 36 *8
+# epc         31 *8
+# kernel_satp 32 *8
+# kernel_sp   33 *8
+# hartid      34 *8
+# utrap_entry 35 *8
 
   # get real a0
   csrr t0, sscratch
@@ -60,13 +59,13 @@ uvec_enter_asm:
   # save a0 to right position
   sd t0, (9 * 8)(a0)
 
-  ld sp, (34* 8)(a0)
+  ld sp, (33* 8)(a0)
 
-  ld tp, (35* 8)(a0)
+  ld tp, (34* 8)(a0)
 
-  ld t0, (33* 8)(a0)
+  ld t0, (32* 8)(a0)
 
-  ld t1, (36* 8)(a0)
+  ld t1, (35* 8)(a0)
 
   csrw satp, t0
 
