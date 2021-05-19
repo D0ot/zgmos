@@ -45,7 +45,8 @@ enum
 
 void klog_init();
 void klog_putchar(char ch);
-void klog(const char *format, ...);
+int klog(const char *format, ...);
+int klog_va(const char *format, va_list ap);
 void klog_level(int level, const char *format, ...);
 
 void klog_lock_init();

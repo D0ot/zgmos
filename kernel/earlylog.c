@@ -2,38 +2,27 @@
 #include "kustd.h"
 #include "sbi.h"
 #include "spinlock.h"
-
-static struct spinlock printf_lock;
-
-void printf_lock_init(void) {
-  spinlock_init(&printf_lock, "pr");
-}
+#include "klog.h"
 
 int printf(const char *format, ...) {
+  klog_lock_acquire();
   int ret;
   va_list ap;
-
-  spinlock_acquire(&printf_lock);
-
   va_start(ap, format);
-  ret = v_printf_callback(format, (out_func_ptr)sbi_console_putchar, ap);
+  ret = klog_va(format, ap);
   va_end(ap);
-
-  spinlock_release(&printf_lock);
+  klog_lock_release();
   return ret;
 }
 
 
 int puts(const char *str) {
-  spinlock_acquire(&printf_lock);
-
+  klog_lock_acquire();
   while(*str) {
-    sbi_console_putchar(*str);
+    klog_putchar(*str);
     str++;
   }
-  sbi_console_putchar('\n');
-
-  spinlock_release(&printf_lock);
-
+  klog_putchar('\n');
+  klog_lock_release();
   return 0;
 }

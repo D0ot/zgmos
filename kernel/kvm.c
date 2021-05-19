@@ -5,6 +5,7 @@
 #include "pte.h"
 #include "riscv.h"
 #include "../driver/virtio.h"
+#include "../driver/ns16550.h"
 #include "process.h"
 
 
@@ -32,6 +33,9 @@ void kvm_init(pte_t *kp) {
 #ifdef QEMU
   // map virtio_blk_mmio
   pte_map(kp, VIRTIO_BLK_MMIO_BASE, VIRTIO_BLK_MMIO_BASE, PTE_RW_SET, PTE_PAGE_4K);
+
+  // map uart
+  pte_map(kp, NS16550_BASE_ADDR, NS16550_BASE_ADDR, PTE_RW_SET, PTE_PAGE_4K);
 #endif
 
   

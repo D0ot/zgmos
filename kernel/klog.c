@@ -8,46 +8,50 @@ void uart_putchar(char ch);
 
 void klog_putchar(char ch)
 {
-    uart_putchar(ch);
+  uart_putchar(ch);
 }
 
 void klog_init() {
   klog_lock_init();
 }
 
-void klog(const char *format, ...)
-{
-    va_list ap;
-    va_start(ap, format);
-    v_printf_callback(format, klog_putchar, ap);
-    va_end(ap);
+int klog(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  int ret = v_printf_callback(format, klog_putchar, ap);
+  va_end(ap);
+  return ret;
 }
 
-void klog_level(int level, const char *format, ...)
-{
-    va_list ap;
-    va_start(ap, format);
-    if(level < 0 || level > 3)
+
+int klog_va(const char *format, va_list ap) {
+  return v_printf_callback(format, klog_putchar, ap);
+}
+
+void klog_level(int level, const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  if(level < 0 || level > 3)
+  {
+    while(1)
     {
-        while(1)
-        {
-            // usage error.
-        }
+      // usage error.
     }
-    char *level_str[4] = {"Debug", "Info", "Warning", "Error"};
-    char *output = level_str[level];
-    while(*output)
-    {
-        klog_putchar(*output++);
-    }
-    output = " | ";
-    while (*output)
-    {
-        klog_putchar(*output++);
-    }
-    
-    v_printf_callback(format, klog_putchar, ap);
-    va_end(ap);
+  }
+  char *level_str[4] = {"Debug", "Info", "Warning", "Error"};
+  char *output = level_str[level];
+  while(*output)
+  {
+    klog_putchar(*output++);
+  }
+  output = " | ";
+  while (*output)
+  {
+    klog_putchar(*output++);
+  }
+  
+  v_printf_callback(format, klog_putchar, ap);
+  va_end(ap);
 }
 
 

@@ -2,14 +2,6 @@ OUTPUT_ARCH("riscv")
 ENTRY(_start)
 PROVIDE(_kernel_entry = 0x80200000 );
 
-/*
-MEMORY
-{
-  sbi (wxa!ri) : ORIGIN = 0x80000000, LENGTH = (2*1024*1024)
-  ram (wxa!ri) : ORIGIN = 0x80200000, LENGTH = (4*1024*1024)
-  ram_nocahce (axa!ri) : ORIGIN = 0x40000000, LENGTH = (6*1024*1024)
-}*/
-
 PROVIDE(_ram_end = 0x80800000);
 
 PROVIDE(_sbi_start = 0x80000000);
@@ -41,8 +33,8 @@ SECTIONS
   PROVIDE(_rodata_start = ABSOLUTE(.) );
   .rodata :
   {
-    *.(.rdata)
-    *.(.rodata .rodata.*)
+    *(.rdata)
+    *(.rodata .rodata.*)
   }
 
   /* . = ALIGN(8);*/
@@ -53,6 +45,7 @@ SECTIONS
   .data :
   {
     *(.data .data.*)
+    *(.sdata .sdata.*)
   }
   . = ALIGN(4K);
 
@@ -61,9 +54,11 @@ SECTIONS
   .bss :
   {
     *(.bss .bss.*)
+    *(.sbss .sbss.*)
   }
-  . = ALIGN(4K);
   
-  PROVIDE(_bss_end = ALIGN(4096) );
-  PROVIDE(_kernel_end = ALIGN(4096) );
+  . = ALIGN(4K) + 4096;
+  
+  PROVIDE(_bss_end = ABSOLUTE(.) );
+  PROVIDE(_kernel_end = ABSOLUTE(.) );
 }

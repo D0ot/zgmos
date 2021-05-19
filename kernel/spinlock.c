@@ -5,8 +5,7 @@
 #include "earlylog.h"
 #include "riscv.h"
 
-void
-spinlock_init(struct spinlock *lk, char *name)
+void spinlock_init(struct spinlock *lk, char *name)
 {
   lk->name = name;
   lk->locked = 0;
@@ -16,8 +15,7 @@ spinlock_init(struct spinlock *lk, char *name)
 
 // Acquire the lock.
 // Loops (spins) until the lock is acquired.
-void
-spinlock_acquire(struct spinlock *lk)
+void spinlock_acquire(struct spinlock *lk)
 {
   // push_off(); // disable interrupts to avoid deadlock.
   w_sstatus(r_sstatus() & ~SSTATUS_SIE);
@@ -45,8 +43,7 @@ spinlock_acquire(struct spinlock *lk)
 }
 
 // Release the lock.
-void
-spinlock_release(struct spinlock *lk)
+void spinlock_release(struct spinlock *lk)
 {
   if(!spinlock_holding(lk)) {
     KERNEL_PANIC();
@@ -77,8 +74,7 @@ spinlock_release(struct spinlock *lk)
 
 // Check whether this cpu is holding the lock.
 // Interrupts must be off.
-int
-spinlock_holding(struct spinlock *lk)
+int spinlock_holding(struct spinlock *lk)
 {
   int r;
   // r = (lk->locked && lk->cpu == mycpu());
