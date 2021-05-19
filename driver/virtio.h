@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include "rwv.h"
 
-#define RWV32(x) (* ( (volatile uint32_t*)(&(x)) ) )
 
 #define VIRTIO_QUEUE_SIZE (128)
 

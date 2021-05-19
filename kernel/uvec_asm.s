@@ -71,14 +71,16 @@ uvec_enter_asm:
 
   sfence.vma
 
-  # jump to utrap_entry
+  # jump to utrap_entry()
   jr t1
+
 
 
 
 .global uvec_ret_asm
 # a0: trapframe va, should saved in sscratch
 # a1: the user satp value
+# from utrap_ret()
 uvec_ret_asm:
 
   csrw satp, a1
