@@ -18,6 +18,7 @@
 #include "klog.h"
 #include "cpu.h"
 #include "scheduler.h"
+#include "filesystem.h"
 
 // hal
 #include "../hal/disk_hal.h"
@@ -52,26 +53,16 @@ int main(uint64_t hartid) {
     kpte = pte_create();
     kvm_init(kpte);
     kvm_install(kpte);
-    sbi_legacy_set_timer(r_time() + 30000000);
 
+    fs_init(); 
+    struct vfs_t *vfs = fs.vfs;
 
-    
-    struct disk_hal *hal = disk_hal_init();
-
-    struct fat32_fs *fs = fat32_init(hal, 0, 0, 1);
-
-    struct vfs_t *vfs = vfs_init(10);
-    global_vfs = vfs;
-
-    struct vfs_backend bkd = fat32bkd(fs);
-
-    vfs_mount(vfs, vfs_root(vfs), bkd);
-
-    struct vnode *image = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/test1");
+    struct vnode *image = vfs_get_recursive(vfs, NULL, "testcase/test1");
     struct task_struct *task = task_create(image, NULL);
 
-    struct vnode *image2 = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/test2");
+    struct vnode *image2 = vfs_get_recursive(vfs, NULL, "testcase/test2");
     struct task_struct *task2 = task_create(image2, NULL);
+
 
     pte_debug_print(task->user_pte);
     

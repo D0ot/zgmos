@@ -126,6 +126,8 @@ void kmem_cache_free(kmem_cache_t *kc, void *obj) {
 }
 
 void kmem_init() {
+  spinlock_init(&kmem_chain.lock, "kmem_cache");
+
   // initialize meta slab object comsumes some physical pages
   slab_static_init();
 
@@ -147,9 +149,11 @@ void *kmem_alloc(size_t objsize) {
     // obj too big, use pmem_alloc instead
     return NULL;
   }
+  spinlock_acquire(&kmem_chain.lock);
 
   if(objsize <= KMEM_CACHE_SIZE_LIST[0]) {
-    return kmem_cache_alloc(container_of(kmem_chain.cache_list.next, kmem_cache_t, list));
+    ret = kmem_cache_alloc(container_of(kmem_chain.cache_list.next, kmem_cache_t, list));
+    goto alloc_success;
   }
 
   struct list_head *pos;
@@ -162,21 +166,29 @@ void *kmem_alloc(size_t objsize) {
     }
   }
   ret = kmem_cache_alloc(res);
+
+alloc_success:
+  spinlock_release(&kmem_chain.lock);
   return ret;
 }
 
 void kmem_free(void *addr) {
   void *aligned_addr = (void*)ALIGN_4K(addr);
-  kmem_cache_t *kc = buddy_get_adat(aligned_addr);
+  // the adat is set by slab_create
+  spinlock_acquire(&kmem_chain.lock);
+  kmem_cache_t *kc = pmem_get_adat(aligned_addr);
   kmem_cache_free(kc, addr);
+  spinlock_release(&kmem_chain.lock);
 }
 
 void kmem_shrink() {
   struct list_head *pos;
+  spinlock_acquire(&kmem_chain.lock);
   list_for_each(pos, &kmem_chain.cache_list) {
     kmem_cache_t *kc = container_of(pos, kmem_cache_t, list);
     kmem_cache_shrink(kc);
   }
+  spinlock_release(&kmem_chain.lock);
 }
 
 void kmem_add(kmem_cache_t *kc) {

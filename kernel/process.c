@@ -13,6 +13,7 @@
 #include "uvec.h"
 #include "extdef.h"
 #include "cpu.h"
+#include "filesystem.h"
 
 
 bool task_aux_check_elf(Elf64_Ehdr *ehdr) {
@@ -157,7 +158,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   }
   
 
-  uint64_t cnt = vfs_read(global_vfs, image, 0, (void*)(ehdr), sizeof(Elf64_Ehdr));
+  uint64_t cnt = vfs_read(fs.vfs, image, 0, (void*)(ehdr), sizeof(Elf64_Ehdr));
 
   if(cnt != sizeof(Elf64_Ehdr)) {
     goto after_ehdr;
@@ -183,7 +184,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   while(phcnt != ehdr->e_phnum) {
     __auto_type to_load = min(ehdr->e_phnum - phcnt, once_load);
 
-    uint64_t byte_read = vfs_read(global_vfs, image, offset, phdr, sizeof(Elf64_Phdr) * to_load);
+    uint64_t byte_read = vfs_read(fs.vfs, image, offset, phdr, sizeof(Elf64_Phdr) * to_load);
 
     if(byte_read != sizeof(Elf64_Phdr) * to_load) {
       goto in_load_fail;
@@ -225,7 +226,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
         // load, if filesz reached, we only alloc the page, and do not load
         if(byte_cnt < phdr[i].p_filesz) {
           uint64_t len = min(phdr[i].p_filesz - byte_cnt, PAGE_SIZE - byte_offset_init);
-          if(len != vfs_read(global_vfs, image, phdr[i].p_offset + byte_cnt, (void*)(pg->pa + byte_offset_init), len)) {
+          if(len != vfs_read(fs.vfs, image, phdr[i].p_offset + byte_cnt, (void*)(pg->pa + byte_offset_init), len)) {
             goto in_load_fail;
           }
           byte_cnt += len;

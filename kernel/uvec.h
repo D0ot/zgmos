@@ -4,4 +4,6 @@
 void utrap_entry();
 void utrap_ret();
 
+void yield();
+
 #endif // __UVEC_H_

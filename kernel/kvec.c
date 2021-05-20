@@ -8,6 +8,7 @@
 #include "cpu.h"
 #include "klog.h"
 #include "defs.h"
+#include "uvec.h"
 
 void kvec() {
   uint64_t scause = r_scause();
@@ -28,6 +29,7 @@ void kvec() {
   } else if(scause == SCAUSE_ECALL_USER) {
     LOG_INFO("ecall from user panic");
     KERNEL_PANIC();
+    yield();
   } else {
     // unhandled interrupt or exception
     LOG_INFO("unhandled interrupt, sscause: %x, sstval: %x\n", scause, stval);

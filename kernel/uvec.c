@@ -59,9 +59,6 @@ void regdump() {
   PRINT_REG(t4);
   PRINT_REG(t5);
   PRINT_REG(t6);
-
-
-
 }
 
 void yield() {

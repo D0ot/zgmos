@@ -5,6 +5,7 @@
 #include "earlylog.h"
 #include "defs.h"
 #include "panic.h"
+#include "spinlock.h"
 
 
 // next is the next block with the same pow
@@ -36,6 +37,8 @@ struct buddy_system {
   uint64_t free_pages;
   uint64_t total_pages;
   int64_t indices[MAX_BLOCK_POW];
+
+  struct spinlock lock;
 } bs;
 
 
@@ -108,6 +111,7 @@ int8_t buddy_get_used(int64_t index) {
 
 
 void buddy_init(void *pa_start, void *pa_end) {
+  spinlock_init(&bs.lock, "buddy system");
   buddy_aux_data_init(pa_start, pa_end);
   uint64_t cur_page_pos = 0;
   for(int i = MAX_BLOCK_POW - 1; i >= 0; --i) {
@@ -168,13 +172,17 @@ int64_t buddy_alloc_index(uint8_t pow) {
 }
 
 void *buddy_alloc(uint8_t pow) {
+  spinlock_acquire(&bs.lock);
   uint64_t index = buddy_alloc_index(pow);
+  void *ret;
   if(index == -1) {
-    return NULL;
+    ret = NULL;
   } else {
     bs.free_pages -= POWER_OF_2(pow);
-    return buddy_aux_index2addr(index);
+    ret = buddy_aux_index2addr(index);
   }
+  spinlock_release(&bs.lock);
+  return ret;
 }
 
 bool buddy_aux_mergeable(int64_t index1, int64_t index2, int8_t pow) {
@@ -244,12 +252,14 @@ int8_t buddy_free_index(int64_t index) {
 
 void buddy_free(void *pa) {
   uint64_t index = buddy_aux_addr2index(pa);
+  spinlock_acquire(&bs.lock);
   if(buddy_get_used(index) == BUDDY_BLOCK_FREE) {
     // try to free an unused memory block
     KERNEL_PANIC();
   }
   uint8_t p = buddy_free_index(index);
   bs.free_pages += POWER_OF_2(p);
+  spinlock_release(&bs.lock);
 }
 
 uint64_t buddy_get_free_pages_count() {

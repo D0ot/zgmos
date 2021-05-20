@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "slab.h"
+#include "spinlock.h"
 
 static const size_t KMEM_CACHE_SIZE_LIST[] = { 8, 16, 32, 64, 128, 256, 512, 1024, 2048};
 static const size_t KMEM_CACHE_SIZE_LIST_LEN = sizeof(KMEM_CACHE_SIZE_LIST) / sizeof(KMEM_CACHE_SIZE_LIST[0]);
@@ -28,10 +29,14 @@ typedef struct kmem_chain {
   struct list_head cache_list;
 
   // slab to allocate memory for kmem_cache
+  // a slab allocator which allocates some kmem_cache objects
   slab_t *kmem_cache_slab;
 
   // slab to allocate memory for other slab
+  // a slab allocator which allocates some slab objects, pslab is parent slab
   slab_t *pslab;
+
+  struct spinlock lock;
 } kmem_chain_t;
 
 kmem_cache_t *kmem_cache_create(size_t size);
@@ -44,6 +49,7 @@ void *kmem_cache_alloc(kmem_cache_t *kc);
 void kmem_cache_free(kmem_cache_t *kc, void *obj);
 
 void kmem_init();
+// only these three functions have lock operations
 void *kmem_alloc(size_t objsize);
 void kmem_free(void *addr);
 void kmem_shrink();

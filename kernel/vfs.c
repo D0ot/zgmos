@@ -5,7 +5,6 @@
 #include "defs.h"
 #include "utils.h"
 
-struct vfs_t *global_vfs;
 
 
 struct vfs_block *vblk_alloc() {
@@ -261,6 +260,10 @@ void vfs_create(struct vfs_t *vfs, struct vnode *parent, char *name) {
 }
 
 struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, const char *name) {
+  if(!parent) {
+    parent = vfs_root(vfs);
+  }
+
   if(parent->type != VNODE_DIR && parent->type != VNODE_MP) {
     return NULL;
   }
@@ -284,6 +287,9 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, const char *name)
 }
 
 struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const char *path) {
+  if(!parent) {
+    parent = vfs_root(vfs);
+  }
   struct vnode *p = parent;
   struct vnode *ret = NULL;
   uint64_t s = 0;
