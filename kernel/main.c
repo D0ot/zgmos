@@ -77,7 +77,7 @@ int main(uint64_t hartid) {
     
     scheduler_init();
     scheduler_add(task);
-    //scheduler_add(task2);
+    scheduler_add(task2);
     scheduler_run();
 
     while(1);

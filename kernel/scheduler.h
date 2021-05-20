@@ -9,5 +9,6 @@ void scheduler_init();
 void scheduler_run();
 
 void scheduler_add(struct task_struct *task);
+void scheduler_mark(struct task_struct *task);
 
 #endif // __SCHEDULER_H_

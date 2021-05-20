@@ -11,6 +11,13 @@ void scheduler_add(struct task_struct *task) {
   list_add(&task->ubs, &process_chain);
 }
 
+// take to process to list tail
+void scheduler_mark(struct task_struct *task) {
+  struct list_head *tmp = &task->ubs;
+  list_del(tmp);
+  list_add_tail(tmp, &process_chain);
+}
+
 void scheduler_init() {
   list_init(&process_chain);
 }
@@ -35,6 +42,7 @@ void scheduler_run() {
       LOG_DEBUG("enter into swtch");
       swtch(&cpu->schduler_ctx, &cur->ctx);
       LOG_DEBUG("exit from swtch");
+      scheduler_mark(cur);
     }
   }
 }
