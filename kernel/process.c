@@ -14,6 +14,8 @@
 #include "extdef.h"
 #include "cpu.h"
 #include "filesystem.h"
+#include "pid.h"
+
 
 
 bool task_aux_check_elf(Elf64_Ehdr *ehdr) {
@@ -100,6 +102,9 @@ pte_t task_aux_map_flags(Elf64_Word seg_flags) {
   return flags;
 }
 
+void task_init() {
+  pid_init();
+}
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent) {
   if(!image) {
@@ -258,6 +263,8 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   //
   ((uint64_t*)task->ustack_pa)[0] = 0;
   ((uint64_t*)task->ustack_pa)[1] = 0;
+
+  task->pid = pid_alloc();
   
   return task;
 

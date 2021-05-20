@@ -178,7 +178,13 @@ struct task_struct{
 
   // exit code 
   int exit_status;
+
+  // process id
+  int pid;
 };
+
+// initlize the task management
+void task_init();
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent);
 void task_create_ret();
