@@ -19,11 +19,11 @@ void kvec() {
   if(scause == SCAUSE_SUPV_TIMER) {
     sbi_legacy_set_timer(r_time() + 30000000);
     printf("timer!\n");
-  } if(scause == SCAUSE_ECALL_USER) {
+  } else if(scause == SCAUSE_ECALL_USER) {
     printf("ecall from user\n");
   } else {
     // unhandled interrupt or exception
-    printf("unhandled interrupt, sscause: %l, sstval: %l\n", scause, stval);
+    printf("unhandled interrupt, sscause: %x, sstval: %x\n", scause, stval);
     KERNEL_PANIC();
   }
 }

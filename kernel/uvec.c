@@ -12,6 +12,9 @@ typedef void (*uvec_ret_func)(uint64_t, uint64_t);
 void utrap_entry() {
   uint64_t scause = r_scause();
 
+  w_stvec((uint64_t)kvec_asm);
+  
+
   if(scause == SCAUSE_ECALL_USER) {
     printf("ecall from user\n");
   } else if(scause == SCAUSE_SUPV_TIMER) {
@@ -20,7 +23,6 @@ void utrap_entry() {
     printf("unknown int from user, scause: %l\n", scause);
   }
 
-  while(1);
   utrap_ret();
 }
 

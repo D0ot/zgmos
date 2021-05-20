@@ -12,6 +12,7 @@
 #include "riscv.h"
 #include "uvec.h"
 #include "extdef.h"
+#include "cpu.h"
 
 
 bool task_aux_check_elf(Elf64_Ehdr *ehdr) {
@@ -246,7 +247,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   task->ctx.sp = (uint64_t)(task->kstack_pa + PAGE_SIZE * 2);
 
   task->tfp->hartid = get_hartid();
-  task->tfp->kernel_sp = task->kstack_pa + PAGE_SIZE;
+  task->tfp->kernel_sp = (uint64_t)(task->kstack_pa + PAGE_SIZE);
   task->tfp->kernel_satp = r_satp();
   task->tfp->utrap_entry = (uint64_t)utrap_entry;
   task->tfp->epc = ehdr->e_entry;
@@ -338,12 +339,9 @@ void tasK_add(struct task_struct *task);
 void task_del(struct task_struct *task);
 
 
-// not exposed to public
-struct task_struct *global_task[HART_NUM];
-
 struct task_struct *task_get_current() {
-  return global_task[get_hartid()];
+  return get_cpu()->curent_task;
 }
 void task_set_current(struct task_struct *task) {
-  global_task[get_hartid()] = task;
+  get_cpu()->curent_task = task;
 }
