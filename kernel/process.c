@@ -101,7 +101,6 @@ pte_t task_aux_map_flags(Elf64_Word seg_flags) {
 
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent) {
-
   if(!image) {
     goto after_none;
   }
@@ -111,6 +110,8 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   if(!task) {
     goto after_none;
   }
+
+  task->image = image;
 
   list_init(&task->children);
   list_init(&task->pages);
@@ -334,9 +335,6 @@ void task_remove_all_page(struct task_struct *task) {
     kfree(pg);
   }
 }
-
-void tasK_add(struct task_struct *task);
-void task_del(struct task_struct *task);
 
 
 struct task_struct *task_get_current() {

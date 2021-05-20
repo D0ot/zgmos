@@ -4,12 +4,12 @@
 #include "panic.h"
 #include "earlylog.h"
 #include "riscv.h"
+#include "cpu.h"
 
 void spinlock_init(struct spinlock *lk, char *name)
 {
   lk->name = name;
   lk->locked = 0;
-  // lk->cpu = 0;
   lk->cpu_id = -1;
 }
 
@@ -17,9 +17,7 @@ void spinlock_init(struct spinlock *lk, char *name)
 // Loops (spins) until the lock is acquired.
 void spinlock_acquire(struct spinlock *lk)
 {
-  // push_off(); // disable interrupts to avoid deadlock.
-  w_sstatus(r_sstatus() & ~SSTATUS_SIE);
-
+  cpu_int_push();
   if(spinlock_holding(lk)) {
     KERNEL_PANIC();
   }
@@ -68,8 +66,7 @@ void spinlock_release(struct spinlock *lk)
   //   amoswap.w zero, zero, (s1)
   __sync_lock_release(&lk->locked);
 
-  // pop_off();
-  w_sstatus(r_sstatus() | SSTATUS_SIE);
+  cpu_int_pop();
 }
 
 // Check whether this cpu is holding the lock.

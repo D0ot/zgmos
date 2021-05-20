@@ -5,6 +5,7 @@
 #include "riscv.h"
 #include "panic.h"
 #include "sbi.h"
+#include "cpu.h"
 
 void kvec() {
   uint64_t scause = r_scause();
@@ -15,6 +16,7 @@ void kvec() {
     // from user mode... panic
     KERNEL_PANIC();
   }
+  
 
   if(scause == SCAUSE_SUPV_TIMER) {
     sbi_legacy_set_timer(r_time() + 30000000);

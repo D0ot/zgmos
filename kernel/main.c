@@ -11,27 +11,35 @@
 #include "pte.h"
 #include "kvm.h"
 #include "riscv.h"
-#include "../driver/virtio.h"
-#include "../driver//virtio_blk.h"
 #include "fat32.h"
 #include "vfs_fat32.h"
 #include "vfs.h"
 #include "process.h"
+#include "klog.h"
+#include "cpu.h"
+#include "scheduler.h"
+
+// hal
+#include "../hal/disk_hal.h"
+#include "../hal/uart_hal.h"
 
 volatile static int started = 0;
 pte_t* kpte;
 
-struct context schectx;
 
 int main(uint64_t hartid) {
   set_hartid(hartid);
 
   if (hartid == 0) {
+    // initialize the cpu structs, must before any lock operations
+    cpu_struct_init();
+
     w_stvec((uint64_t)kvec_asm);
     s_sstatus(SSTATUS_SIE);
     s_sie(SIE_SSIE | SIE_STIE);
+    uart_init();
+    klog_init();
 
-    printf_lock_init();
     printf("hart %d enter main()...\n", hartid);
     // Print LOGO.
     print_bootinfo(hartid);
@@ -44,9 +52,7 @@ int main(uint64_t hartid) {
     kpte = pte_create();
     kvm_init(kpte);
     kvm_install(kpte);
-
-
-    //sbi_legacy_set_timer(r_time() + 30000000);
+    sbi_legacy_set_timer(r_time() + 30000000);
 
 
     
@@ -61,14 +67,18 @@ int main(uint64_t hartid) {
 
     vfs_mount(vfs, vfs_root(vfs), bkd);
 
-
-    struct vnode *image = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/brk");
+    struct vnode *image = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/test1");
     struct task_struct *task = task_create(image, NULL);
+
+    struct vnode *image2 = vfs_get_recursive(vfs, vfs_root(vfs), "testcase/test2");
+    struct task_struct *task2 = task_create(image2, NULL);
 
     pte_debug_print(task->user_pte);
     
-    task_set_current(task);
-    swtch(&schectx, &task->ctx);
+    scheduler_init();
+    scheduler_add(task);
+    //scheduler_add(task2);
+    scheduler_run();
 
     while(1);
 
@@ -90,7 +100,11 @@ int main(uint64_t hartid) {
     kvm_install(kpte);
     printf("hart 1 init done\n");
   }
-  while(1);
+
+  
+  while(1) {
+    LOG_INFO("hello from hart, id = %l", get_hartid());
+  }
   return 0;
 }
 
