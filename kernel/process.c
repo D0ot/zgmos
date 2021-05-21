@@ -266,6 +266,8 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
 
   task->pid = pid_alloc();
   
+  kfree(phdr);
+  kfree(ehdr);
   return task;
 
 in_load_fail:
@@ -291,12 +293,23 @@ after_none:
   
 }
 
+void task_exit(struct task_struct *task) {
+  task_remove_all_page(task);
+  pmem_free(task->ustack_pa);
+  pmem_free(task->kstack_pa);
+  pmem_free(task->tfp);
+  pte_destory(task->user_pte);
+  // do not free task it self
+  // that is done by task_clean
+}
+
+
+void task_clean(struct task_struct *task) {
+}
 void task_create_ret() {
   utrap_ret();
 }
 
-void task_destroy(struct task_struct *task) {
-}
 
 struct task_page *task_add_page(struct task_struct *task, void *va, pte_t flags) {
   struct task_page *page = kmalloc(sizeof(struct task_page));

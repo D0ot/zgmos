@@ -143,6 +143,7 @@ struct vfs_t *vfs_init(uint32_t buffer_max) {
 
   struct vfs_t *vfs = kmalloc(sizeof(struct vfs_t));
   if(vfs) {
+    vfs->root.ref_cnt = 0;
     vfs->root.lfs_obj = NULL;
     vfs->root.name = NULL;
     // if it is directory
@@ -326,6 +327,18 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const c
   return ret;
 }
 
+struct vnode *vfs_open(struct vfs_t *vfs, struct vnode *parent, const char *path) {
+  struct vnode *ret = vfs_get_recursive(vfs, parent, path);
+  if(ret) {
+    ret->ref_cnt++;
+  }
+  return ret;
+}
+
+void vfs_close(struct vfs_t *vfs, struct vnode *node) {
+  node->ref_cnt--;
+}
+
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node) {
   //TODO
   while(1);
@@ -343,6 +356,12 @@ void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
 }
 
 uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
+
+  if(node->type == VNODE_DEV) {
+    return node->bkd->read(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+  }
+
+
   if(offset >= node->size) {
     return 0;
   }
@@ -363,6 +382,14 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
     byteoff = 0;
   }
   return byte_cnt;
+}
+
+uint64_t vfs_write(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
+  if(node->type == VNODE_DEV) {
+    return node->bkd->write(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+  }else {
+    return 0;
+  }
 }
 
 struct vnode* vfs_iterate(struct vfs_t *vfs, struct vnode *parent, struct vnode *last) {

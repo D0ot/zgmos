@@ -187,8 +187,14 @@ struct task_struct{
 void task_init();
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent);
+
+// it is called when process exit
+void task_exit(struct task_struct *task);
+
+// it is called when parent process called wait
+void task_clean(struct task_struct *task);
+
 void task_create_ret();
-void task_destroy(struct task_struct *task);
 
 // alloc a page for the process
 // caller must ensure the va is 4K aligned
@@ -202,7 +208,7 @@ bool task_remove_page(struct task_struct *task, void *va);
 // or when the task_create failed
 void task_remove_all_page(struct task_struct *task);
 
-void tasK_add(struct task_struct *task);
+void task_add(struct task_struct *task);
 void task_del(struct task_struct *task);
 
 

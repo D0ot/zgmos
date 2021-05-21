@@ -8,6 +8,8 @@
 
 
 struct list_head process_chain;
+struct list_head process_stopped;
+struct list_head process_sleep;
 
 void scheduler_add(struct task_struct *task) {
   list_add(&task->ubs, &process_chain);
@@ -22,6 +24,8 @@ void scheduler_mark(struct task_struct *task) {
 
 void scheduler_init() {
   list_init(&process_chain);
+  list_init(&process_sleep);
+  list_init(&process_stopped);
 }
 
 void scheduler_run() {

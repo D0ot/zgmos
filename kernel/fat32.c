@@ -164,6 +164,7 @@ uint32_t fat32_clu2sec(struct fat32_fs *fs, uint32_t cidx) {
 
 static const uint32_t FAT32_CHAIN_END_FLAG = 0x0ffffff8;
 
+// to find next avaliable cluster
 uint32_t fat32_search_avail_chain(struct fat32_fs *fs, uint32_t start) {
   uint32_t sidx = start / fs->chain_per_sector + fs->reserved_sec_cnt;
   uint32_t offset_in_sector = start % fs->chain_per_sector;
@@ -180,6 +181,7 @@ uint32_t fat32_search_avail_chain(struct fat32_fs *fs, uint32_t start) {
   // failed
   return 0;
 }
+
 
 // set an entry in chain
 void fat32_set_chain(struct fat32_fs *fs, uint32_t index , uint32_t val) {

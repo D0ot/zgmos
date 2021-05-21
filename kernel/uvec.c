@@ -74,7 +74,6 @@ void utrap_entry() {
 
   if(scause == SCAUSE_ECALL_USER) {
     LOG_DEBUG("syscall from user");
-    LOG_DEBUG("user sp: %x", task_get_current()->tfp->sp);
     task_get_current()->tfp->epc = r_sepc() + 4;
     intr_on();
     syscall();
