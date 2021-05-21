@@ -55,19 +55,20 @@ int main(uint64_t hartid) {
     kvm_install(kpte);
 
     fs_init(); 
+    task_init();
     struct vfs_t *vfs = fs.vfs;
 
     struct vnode *image = vfs_get_recursive(vfs, NULL, "testcase/test1");
     struct task_struct *task = task_create(image, NULL);
 
-    struct vnode *image2 = vfs_get_recursive(vfs, NULL, "testcase/test2");
+    struct vnode *image2 = vfs_get_recursive(vfs, NULL, "testcase/write");
     struct task_struct *task2 = task_create(image2, NULL);
 
 
     pte_debug_print(task->user_pte);
     
     scheduler_init();
-    scheduler_add(task);
+    // scheduler_add(task);
     scheduler_add(task2);
     scheduler_run();
 

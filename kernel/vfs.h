@@ -2,8 +2,9 @@
 #define __VFS_H_
 
 #include <stdint.h>
-#include "list.h"
 #include <stdbool.h>
+#include "list.h"
+#include "spinlock.h"
 
 
 #define VNODE_UNDEF 0
@@ -148,6 +149,8 @@ struct vfs_t {
   uint32_t bbf_free_cnt;
 
   uint32_t bbf_total_max;
+
+  struct spinlock lock;
 };
 
 
@@ -211,6 +214,7 @@ struct vnode *vfs_get(struct vfs_t *vfs, struct vnode *parent, const char *name)
 struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const char *path);
 
 struct vnode *vfs_open(struct vfs_t *vfs, struct vnode *parent, const char *path);
+struct vnode *vfs_reopen(struct vfs_t *vfs, struct vnode *node);
 void vfs_close(struct vfs_t *vfs, struct vnode *node);
 
 void vfs_unlink(struct vfs_t *vfs, struct vnode *node);

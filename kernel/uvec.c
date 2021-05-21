@@ -73,10 +73,10 @@ void utrap_entry() {
   w_stvec((uint64_t)kvec_asm);
 
   if(scause == SCAUSE_ECALL_USER) {
-    LOG_DEBUG("syscall from user");
+    //LOG_DEBUG("syscall from user");
     task_get_current()->tfp->epc = r_sepc() + 4;
     intr_on();
-    syscall();
+    task_get_current()->tfp->a0 = syscall();
   } else if(scause == SCAUSE_SUPV_TIMER) {
     LOG_DEBUG("timer interrupt from user");
     sbi_legacy_set_timer(r_time() + TIMER_DIFF);
@@ -86,7 +86,13 @@ void utrap_entry() {
     regdump();
   }
 
-  utrap_ret();
+  if(task_get_current()->state == TASK_ZOMBIE) {
+    intr_off();
+    yield();
+  } else {
+    utrap_ret();
+  }
+
 }
 
 void utrap_ret() {

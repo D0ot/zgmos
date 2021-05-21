@@ -2,6 +2,7 @@
 #define __SYSCALL_H_
 
 #include <stdint.h>
+#include <stddef.h>
 
 int syscall();
 
@@ -14,6 +15,9 @@ uint64_t syscall_num();
 
 SYSCALL_GET_ARG_FUNC_DEC(void*, ptr);
 SYSCALL_GET_ARG_FUNC_DEC(int, int);
+
+SYSCALL_GET_ARG_FUNC_DEC(int ,fd);
+SYSCALL_GET_ARG_FUNC_DEC(size_t, size);
 
 
 #define SYS_getcwd        (17)
@@ -30,7 +34,9 @@ SYSCALL_GET_ARG_FUNC_DEC(int, int);
 #define SYS_close         (57)
 #define SYS_getdents64    (61)
 #define SYS_read          (63)
+int syscall_read();
 #define SYS_write         (64)
+int syscall_write();
 #define SYS_fstat         (80)
 
 #define SYS_clone         (220)

@@ -1,4 +1,5 @@
 #include "process.h"
+#include "file.h"
 #include "kmem.h"
 #include "kustd.h"
 #include "list.h"
@@ -117,6 +118,12 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
     goto after_none;
   }
 
+  task->files = files_struct_create();
+  if(!task->files) {
+    goto after_task;
+  }
+
+
   task->image = image;
 
   list_init(&task->children);
@@ -130,7 +137,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
 
   task->user_pte = pte_create();
   if(!task->user_pte) {
-    goto after_task;
+    goto after_files;
   }
   pte_map(task->user_pte, (void*)PROC_VA_TRAMPOLINE, (void*)UVEC_START, PTE_XR_SET, PTE_PAGE_4K);
 
@@ -266,7 +273,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
 
   task->pid = pid_alloc();
   
-  kfree(phdr);
+  pmem_free(phdr);
   kfree(ehdr);
   return task;
 
@@ -274,7 +281,7 @@ in_load_fail:
   task_remove_all_page(task);
 // comment to supress warning
 // after_phdr:
-  kfree(phdr);
+  pmem_free(phdr);
 after_ehdr:
   kfree(ehdr);
 after_ustack:
@@ -285,6 +292,8 @@ after_tfp:
   pmem_free(task->tfp);
 after_pte:
   pte_destory(task->user_pte);
+after_files:
+  files_struct_destroy(task->files);
 after_task:
   kfree(task);
 after_none:

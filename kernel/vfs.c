@@ -3,6 +3,7 @@
 #include "kustd.h"
 #include "pmem.h"
 #include "defs.h"
+#include "spinlock.h"
 #include "utils.h"
 
 
@@ -143,6 +144,8 @@ struct vfs_t *vfs_init(uint32_t buffer_max) {
 
   struct vfs_t *vfs = kmalloc(sizeof(struct vfs_t));
   if(vfs) {
+    spinlock_init(&vfs->lock, "vfs");
+
     vfs->root.ref_cnt = 0;
     vfs->root.lfs_obj = NULL;
     vfs->root.name = NULL;
@@ -328,11 +331,20 @@ struct vnode *vfs_get_recursive(struct vfs_t *vfs, struct vnode *parent, const c
 }
 
 struct vnode *vfs_open(struct vfs_t *vfs, struct vnode *parent, const char *path) {
+  spinlock_acquire(&vfs->lock);
   struct vnode *ret = vfs_get_recursive(vfs, parent, path);
   if(ret) {
     ret->ref_cnt++;
   }
+  spinlock_release(&vfs->lock);
   return ret;
+}
+
+struct vnode *vfs_reopen(struct vfs_t *vfs, struct vnode *node) {
+  spinlock_acquire(&vfs->lock);
+  node->ref_cnt += 1;
+  spinlock_release(&vfs->lock);
+  return node;
 }
 
 void vfs_close(struct vfs_t *vfs, struct vnode *node) {
@@ -356,14 +368,18 @@ void *vfs_access(struct vfs_t *vfs, struct vnode *node, uint64_t blkoff) {
 }
 
 uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
+  spinlock_acquire(&vfs->lock);
 
   if(node->type == VNODE_DEV) {
-    return node->bkd->read(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+    uint64_t tmp = node->bkd->read(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+    spinlock_release(&vfs->lock);
+    return tmp;
   }
 
 
   if(offset >= node->size) {
     return 0;
+    spinlock_release(&vfs->lock);
   }
   // read can not exceed the file size
   buf_len = min(buf_len, node->size - offset);
@@ -381,13 +397,18 @@ uint64_t vfs_read(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *
     byte_cnt += len;
     byteoff = 0;
   }
+  spinlock_release(&vfs->lock);
   return byte_cnt;
 }
 
 uint64_t vfs_write(struct vfs_t *vfs, struct vnode *node, uint64_t offset, void *buf, uint64_t buf_len) {
+  spinlock_acquire(&vfs->lock);
   if(node->type == VNODE_DEV) {
-    return node->bkd->write(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+    uint64_t tmp = node->bkd->write(node->bkd->lfs, node->lfs_obj, offset, buf, buf_len);
+    spinlock_release(&vfs->lock);
+    return tmp;
   }else {
+    spinlock_release(&vfs->lock);
     return 0;
   }
 }
@@ -401,7 +422,9 @@ struct vnode* vfs_iterate(struct vfs_t *vfs, struct vnode *parent, struct vnode 
     }
   }else{
     if(!vfs_is_spaned(parent)) {
+      spinlock_acquire(&vfs->lock);
       vfs_span_search(parent, NULL);
+      spinlock_release(&vfs->lock);
     }
     if(parent->child_cnt) {
       return container_of(parent->children.next, struct vnode, list);

@@ -7,50 +7,59 @@
 #include "defs.h"
 
 
-struct list_head process_chain;
-struct list_head process_stopped;
+struct list_head process_runnable;
 struct list_head process_sleep;
+struct list_head process_exit;
 
 void scheduler_add(struct task_struct *task) {
-  list_add(&task->ubs, &process_chain);
+  list_add(&task->ubs, &process_runnable);
 }
 
-// take to process to list tail
+void scheduler_runnable(struct task_struct *task) {
+  list_del(&task->ubs);
+  list_add(&process_runnable, &task->ubs);
+}
+
+void scheduler_sleep(struct task_struct *task) {
+  list_del(&task->ubs);
+  list_add(&process_sleep, &task->ubs);
+}
+void scheduler_exit(struct task_struct *task) {
+  list_del(&task->ubs);
+  list_add(&process_exit, &task->ubs);
+}
+
 void scheduler_mark(struct task_struct *task) {
-  struct list_head *tmp = &task->ubs;
-  list_del(tmp);
-  list_add_tail(tmp, &process_chain);
+  list_del(&task->ubs);
+  list_add_tail(&process_runnable, &task->ubs);
 }
 
 void scheduler_init() {
-  list_init(&process_chain);
+  list_init(&process_runnable);
   list_init(&process_sleep);
-  list_init(&process_stopped);
+  list_init(&process_exit);
 }
+
+void scheduler_remove(struct task_struct *task) {
+  list_del(&task->ubs);
+}
+
 
 void scheduler_run() {
   
-  struct list_head *iter;
   struct task_struct *cur;
   struct cpu_t *cpu = get_cpu();
   sbi_legacy_set_timer(r_time() + TIMER_DIFF);
   for(;;) {
-    cur = NULL;
-    list_for_each(iter, &process_chain) {
-      struct task_struct *task = container_of(iter, struct task_struct, ubs);
-      if(task->state == TASK_RUNNABLE) {
-        cur = task;
-        break;
-      }
+    if(process_runnable.next == &process_runnable) {
+      continue;
     }
-
-    if(cur) {
-      task_set_current(cur);
-      // LOG_DEBUG("enter into swtch");
-      swtch(&cpu->schduler_ctx, &cur->ctx);
-      // LOG_DEBUG("exit from swtch");
-      scheduler_mark(cur);
-    }
+    cur = container_of(process_runnable.next, struct task_struct, ubs);
+    task_set_current(cur);
+    // LOG_DEBUG("enter into swtch");
+    swtch(&cpu->schduler_ctx, &cur->ctx);
+    // LOG_DEBUG("exit from swtch");
+    scheduler_mark(cur);
   }
 }
 

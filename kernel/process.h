@@ -6,6 +6,7 @@
 #include "list.h"
 #include "defs.h"
 #include "vfs.h"
+#include "file.h"
 
 
 struct context {
@@ -181,6 +182,9 @@ struct task_struct{
 
   // process id
   int pid;
+
+  // files
+  struct files_struct *files;
 };
 
 // initlize the task management
