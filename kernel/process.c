@@ -118,6 +118,7 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
     goto after_none;
   }
 
+  task->max_writable_page = 0;
   task->files = files_struct_create();
   if(!task->files) {
     goto after_task;
@@ -334,6 +335,13 @@ struct task_page *task_add_page(struct task_struct *task, void *va, pte_t flags)
 
   page->va = va;
   page->pa = pa;
+
+  // record the last writable page
+  if(flags & PTE_W_SET) {
+    if((uint64_t)va > task->max_writable_page) {
+      task->max_writable_page = (uint64_t)va;
+    }
+  }
   
   pte_map(task->user_pte, va, pa, flags, PTE_PAGE_4K);
   list_add(&page->list, &task->pages);

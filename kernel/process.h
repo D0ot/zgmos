@@ -1,6 +1,5 @@
 #ifndef __PROCESS_H_
 #define __PROCESS_H_
-
 #include <stdint.h>
 #include "pg.h"
 #include "list.h"
@@ -185,6 +184,15 @@ struct task_struct{
 
   // files
   struct files_struct *files;
+
+
+  // the writable page with max addr
+  uint64_t max_writable_page;
+
+  // program brk
+  void *brk;
+
+
 };
 
 // initlize the task management
