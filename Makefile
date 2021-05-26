@@ -23,7 +23,7 @@ SBI_NAME_QEMU:=rustsbi-qemu
 BIN_SUFFIX:=bin
 
 k210-build:
-	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DK210=1; fi
+	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DK210=1 -DLINKER_SCRIPT=k210.ld; fi
 	cd ./build && make -j$(nproc)
 	@if [ -f "${SBI_LATEST_DIR}/${SBI_NAME_K210}" ]; then \
 		cp --force ${SBI_LATEST_DIR}/${SBI_NAME_K210} ./build/; \
@@ -36,7 +36,7 @@ k210-build:
 
 
 qemu-build:
-	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DQEMU=1; fi
+	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DQEMU=1 -DLINKER_SCRIPT=qemu.ld; fi
 	cd ./build && make -j$(nproc)
 	@if [ -f "${SBI_LATEST_DIR}/${SBI_NAME_QEMU}" ]; then \
 		cp --force ${SBI_LATEST_DIR}/${SBI_NAME_QEMU} ./build/; \

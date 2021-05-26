@@ -25,7 +25,7 @@ add_compile_flags(LD
         -Wl,--no-whole-archive
         -Wl,--end-group
         -Wl,-EL
-        -T ${proj_root}/lds/linker.ld
+        -T ${proj_root}/lds/${LINKER_SCRIPT}
         )
 
 # C Flags Settings
