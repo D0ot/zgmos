@@ -23,3 +23,26 @@ void uart_putchar(char ch) {
 }
 
 #endif 
+
+
+#ifdef K210
+
+#include "../kernel/sbi.h"
+
+void uart_init() {
+}
+
+void uart_send(char ch) {
+  sbi_console_putchar(ch);
+}
+
+char uart_recv() {
+  return sbi_console_getchar();
+}
+
+void uart_putchar(char ch) {
+  uart_send(ch);
+}
+
+
+#endif

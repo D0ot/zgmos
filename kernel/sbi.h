@@ -83,7 +83,7 @@ static inline void sbi_console_putchar(int ch) {
   SBICALL1(SBI_EID_LEGACY_CONSOLE_PUTCHAR, 0, ch);
 }
 
-static inline int sbi_sonsole_getchar(int ch) {
+static inline int sbi_console_getchar() {
   return SBICALL0(SBI_EID_LEGACY_CONSOLE_GETCHAR, 0).error;
 }
 

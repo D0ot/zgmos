@@ -41,3 +41,26 @@ bool disk_hal_destory(struct disk_hal *disk) {
 }
 
 #endif // QEMU
+
+
+#ifdef K210 
+
+struct disk_hal *disk_hal_init() {
+  KERNEL_PANIC();
+  return NULL;
+}
+bool disk_hal_read(struct disk_hal *disk, uint64_t sector, void *buf) {
+  KERNEL_PANIC();
+  return false;
+}
+
+bool disk_hal_write(struct disk_hal *disk, uint64_t sector, void *buf) {
+  KERNEL_PANIC();
+  return false;
+}
+
+bool disk_hal_destory(struct disk_hal *disk) {
+  KERNEL_PANIC();
+}
+
+#endif

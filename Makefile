@@ -15,6 +15,7 @@
 
 # We can modify the default toolchain used here
 # do not commit changes here !!! 
+.DEFAULT_GOAL := default
 TOOLCHAIN:=""
 SBI_LATEST_DIR:=./bootloader/SBI/rustsbi/target/riscv64imac-unknown-none-elf/debug
 SBI_PRECOMPILED_DIR:=./bootloader/SBI
@@ -24,6 +25,7 @@ BIN_SUFFIX:=bin
 FLASHABLE:=k210.bin
 
 k210-build:
+	echo "Build zgmos for k210 platform"
 	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DK210=1 -DLINKER_SCRIPT=k210.ld; fi
 	cd ./build && make -j$(nproc)
 	@if [ -f "${SBI_LATEST_DIR}/${SBI_NAME_K210}" ]; then \
@@ -33,12 +35,13 @@ k210-build:
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210} ./build/; \
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210}.${BIN_SUFFIX} ./build/; \
 	fi
-	cp ./build/${SBI_NAME_K210}.${BIN_SUFFIX} ${FLASHABLE}
+	cp --force ./build/${SBI_NAME_K210}.${BIN_SUFFIX} ./build/${FLASHABLE}
 	dd if=./build/zgmos.bin of=./build/${FLASHABLE} bs=128k seek=1
 	
 
 
 qemu-build:
+	echo "Build zgmos for qemu platform"
 	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DQEMU=1 -DLINKER_SCRIPT=qemu.ld; fi
 	cd ./build && make -j$(nproc)
 	@if [ -f "${SBI_LATEST_DIR}/${SBI_NAME_QEMU}" ]; then \
@@ -90,9 +93,8 @@ sbi-build:
 sbi-clean:
 	rm -rf ${SBI_LATEST_DIR}/*
 	
-
-all: k210-build qemu-build
-	echo "Build k210 image and qemu image"
+default: k210-build
+	echo "default build target"
 
 clean :
 	rm -rf ./build
