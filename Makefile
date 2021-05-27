@@ -21,6 +21,7 @@ SBI_PRECOMPILED_DIR:=./bootloader/SBI
 SBI_NAME_K210:=rustsbi-k210
 SBI_NAME_QEMU:=rustsbi-qemu
 BIN_SUFFIX:=bin
+FLASHABLE:=k210.bin
 
 k210-build:
 	@if [ ! -f  "./build/Makefile" ]; then mkdir -p ./build && cd build && cmake .. -DTOOLCHAIN=${TOOLCHAIN} -DK210=1 -DLINKER_SCRIPT=k210.ld; fi
@@ -32,6 +33,8 @@ k210-build:
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210} ./build/; \
 		cp --force ${SBI_PRECOMPILED_DIR}/${SBI_NAME_K210}.${BIN_SUFFIX} ./build/; \
 	fi
+	cp ./build/${SBI_NAME_K210}.${BIN_SUFFIX} ${FLASHABLE}
+	dd if=./build/zgmos.bin of=./build/${FLASHABLE} bs=128k seek=1
 	
 
 
@@ -57,7 +60,6 @@ QEMU_OPTIONS += -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
 QEMU_OPTIONS += -global virtio-mmio.force-legacy=false
 QEMU_OPTIONS += -d int,cpu_reset,strace -D qemu.log
 
-# TODO
 qemu-debug:
 	echo "Starting qemu debug"
 	qemu-system-riscv64 ${QEMU_OPTIONS}
@@ -65,16 +67,16 @@ qemu-debug:
 QEMU_OPTIONS_NG = ${QEMU_OPTIONS}
 QEMU_OPTIONS_NG += "--nographic"
 
-# TODO
 qemung-debug:
 	echo "Starting qemu debug, nographic"
 	qemu-system-riscv64 ${QEMU_OPTIONS_NG}
 
-# TODO
 gdb:
 	riscv64-unknown-elf-gdb -s ./build/zgmos -x ./scripts/gdbinit
 
-	
+fs:
+	dd if=/dev/zero of=./fs.img bs=1M count=1024
+	mkfs.vfat -F 32 fs.img
 
 
 sbi-build:
