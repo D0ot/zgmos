@@ -10,8 +10,9 @@
 
 
 void kvm_init(pte_t *kp) {
-  // map sbi QEMU
-  pte_map(kp, SBI_START, SBI_START, PTE_XWR_SET, PTE_PAGE_2M);
+
+  // map sbi
+  pte_range_map(kp, SBI_START, SBI_START, PTE_XWR_SET, SBI_END - SBI_START);
 
   // map text
   pte_range_map(kp, TEXT_START, TEXT_START, PTE_XR_SET, TEXT_END - TEXT_START);

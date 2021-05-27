@@ -7,6 +7,8 @@ PROVIDE(_ram_end = 0x80600000);
 PROVIDE(_sbi_start = 0x80000000);
 PROVIDE(_sbi_end = 0x80020000);
 
+PROVIDE(_enable_debug_stub = 0x01);
+
 
 SECTIONS
 {

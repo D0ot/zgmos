@@ -17,7 +17,15 @@ _start:
 _start2:
   la sp, startup_stack2
 
+
+.global _enable_debug_stub
+.global _debug_stub
 _main:
+
+  la t0, _enable_debug_stub
+_debug_stub:
+  li t1, 0x1
+  bnez t0, _debug_stub
   call main
 
 # following is dummy code

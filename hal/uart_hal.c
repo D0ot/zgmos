@@ -33,6 +33,9 @@ void uart_init() {
 }
 
 void uart_send(char ch) {
+  if(ch == '\n') {
+    sbi_console_putchar('\r');
+  }
   sbi_console_putchar(ch);
 }
 
