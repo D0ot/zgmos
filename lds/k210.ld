@@ -2,7 +2,7 @@ OUTPUT_ARCH("riscv")
 ENTRY(_start)
 PROVIDE(_kernel_entry = 0x80020000 );
 
-PROVIDE(_ram_end = 0x80800000);
+PROVIDE(_ram_end = 0x80600000);
 
 PROVIDE(_sbi_start = 0x80000000);
 PROVIDE(_sbi_end = 0x80020000);
