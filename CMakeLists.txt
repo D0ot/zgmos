@@ -63,7 +63,7 @@ endif()
 
 include(${proj_root}/cmake/fix-9985.cmake)
 
-file(GLOB source_files "${proj_root}/kernel/*.c" "${proj_root}/kernel/*.s" "${proj_root}/driver/*.c" "${proj_root}/hal/*.c")
+file(GLOB source_files "${proj_root}/kernel/*.c" "${proj_root}/kernel/*.s" "${proj_root}/driver/*.c" "${proj_root}/hal/*.c" "${proj_root}/driver/kendryte/*.c")
 
 add_executable(${PROJECT_NAME} ${source_files})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)

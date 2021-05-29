@@ -14,6 +14,8 @@ void scheduler_sleep(struct task_struct *task);
 void scheduler_exit(struct task_struct *task);
 void scheduler_remove(struct task_struct *task);
 
+// if the process was run, add it to tail.
+// so it is a simple scheduler
 void scheduler_mark(struct task_struct *task);
 
 #endif // __SCHEDULER_H_
