@@ -16,8 +16,6 @@
 #include <stdint.h>
 #include "encoding.h"
 #include "plic.h"
-#include "syscalls.h"
-#include "syslog.h"
 
 volatile plic_t *const plic = (volatile plic_t *)PLIC_BASE_ADDR;
 

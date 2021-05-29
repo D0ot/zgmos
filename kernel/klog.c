@@ -4,11 +4,10 @@
 #include "spinlock.h"
 
 
-void uart_putchar(char ch);
+void uart_hal_putchar(char ch);
 
-void klog_putchar(char ch)
-{
-  uart_putchar(ch);
+void klog_putchar(char ch) {
+  uart_hal_putchar(ch);
 }
 
 void klog_init() {

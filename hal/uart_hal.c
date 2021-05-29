@@ -6,46 +6,44 @@
 
 struct ns16550 *ns16550_uart;
 
-void uart_init() {
+void uart_hal_init() {
   ns16550_uart = ns16550_init(NS16550_BASE_ADDR);
 }
 
-void uart_send(char ch) {
+void uart_hal_send(char ch) {
   ns16550_send(ns16550_uart, ch);
 }
 
-char uart_recv() {
+char uart_hal_recv() {
   return ns16550_recv(ns16550_uart);
 }
 
-void uart_putchar(char ch) {
-  ns16550_send(ns16550_uart, ch);
+void uart_hal_putchar(char ch) {
+  uart_hal_send(ch);
 }
 
 #endif 
 
-
 #ifdef K210
 
-#include "../kernel/sbi.h"
+#include "kendryte/uarths.h"
 
-void uart_init() {
+void uart_hal_init() {
 }
 
-void uart_send(char ch) {
+void uart_hal_send(char ch) {
   if(ch == '\n') {
-    sbi_console_putchar('\r');
+    uarths_putchar('\r');
   }
-  sbi_console_putchar(ch);
+  uarths_putchar(ch);
 }
 
-char uart_recv() {
-  return sbi_console_getchar();
+char uart_hal_recv() {
+  return uarths_getchar();
 }
 
-void uart_putchar(char ch) {
-  uart_send(ch);
+void uart_hal_putchar(char ch) {
+  uart_hal_send(ch);
 }
-
 
 #endif

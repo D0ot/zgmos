@@ -12,15 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <math.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "bsp.h"
 #include "encoding.h"
-#include "string.h"
 #include "sysctl.h"
 #include "uart.h"
+#include <math.h>
+#include "sleep.h"
 
 #define SYSCTRL_CLOCK_FREQ_IN0 (26000000UL)
 

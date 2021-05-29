@@ -38,6 +38,8 @@
 #define _DRIVER_APBUART_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <stdbool.h>
 #include "dmac.h"
 #include "platform.h"
 #include "plic.h"
@@ -475,6 +477,9 @@ void uart_set_det(uart_device_number_t uart_channel, uart_det_mode_t det_mode, s
  *
  */
 void uart_debug_init(uart_device_number_t uart_channel);
+
+int uart_channel_putc(char c, uart_device_number_t channel);
+int uart_channel_getc(uart_device_number_t channel);
 
 #ifdef __cplusplus
 }

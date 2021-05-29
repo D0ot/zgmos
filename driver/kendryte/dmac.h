@@ -15,12 +15,8 @@
 #ifndef _DRIVER_DMAC_H
 #define _DRIVER_DMAC_H
 
-#include <stddef.h>
-#include <stdint.h>
-#include "io.h"
-#include "platform.h"
+// #include "platform.h"
 #include "plic.h"
-#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -599,7 +595,7 @@ typedef struct _dmac_commonreg_intclear
      * in DMAC_COMMONREG_INTSTATUSREG
      * 0x0 for inactive signal
      */
-    uint64_t cear_slvif_dec_err_intstat : 1;
+    uint64_t clear_slvif_dec_err_intstat : 1;
     /**
      * Bit 1 is Slave Interface Common Register Write
      * to Read only Error Interrupt clear Bit
@@ -1424,7 +1420,7 @@ void dmac_set_single_mode(dmac_channel_number_t channel_num,
                           dmac_address_increment_t dest_inc,
                           dmac_burst_trans_length_t dmac_burst_size,
                           dmac_transfer_width_t dmac_trans_width,
-                          size_t block_size);
+                          uint64_t block_size);
 
 /**
  * @brief       Determine the transfer is complete or not
@@ -1472,7 +1468,7 @@ void dmac_wait_idle(dmac_channel_number_t channel_num);
  * @param[in]   ctx                     The param of callback
  * @param[in]   priority                Interrupt priority
  */
-void dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
+//void dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32 priority);
 
 /**
  * @brief       Set interrupt param
@@ -1482,7 +1478,7 @@ void dmac_set_irq(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_ca
  * @param[in]   ctx                     The param of callback
  * @param[in]   priority                Interrupt priority
  */
-void dmac_irq_register(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32_t priority);
+//void dmac_irq_register(dmac_channel_number_t channel_num, plic_irq_callback_t dmac_callback, void *ctx, uint32 priority);
 
 /**
  * @brief       Unregister dmac interrupt
@@ -1508,7 +1504,7 @@ void dmac_free_irq(dmac_channel_number_t channel_num);
  * @param[in]   dest                    Dest
  * @param[in]   len                     The length of dmac transfer
  */
-void dmac_set_src_dest_length(dmac_channel_number_t channel_num, const void *src, void *dest, size_t len);
+void dmac_set_src_dest_length(dmac_channel_number_t channel_num, const void *src, void *dest, uint64_t len);
 
 /**
  * @brief       Disable dmac channel interrupt
@@ -1533,6 +1529,8 @@ void dmac_channel_disable(dmac_channel_number_t channel_num);
  *
 */
 void dmac_channel_enable(dmac_channel_number_t channel_num);
+
+void dmac_intr(dmac_channel_number_t channel_num);
 
 #ifdef __cplusplus
 }

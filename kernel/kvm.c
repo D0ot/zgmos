@@ -7,6 +7,7 @@
 #include "../driver/virtio.h"
 #include "../driver/ns16550.h"
 #include "process.h"
+#include "../driver//kendryte/platform.h"
 
 
 void kvm_init(pte_t *kp) {
@@ -37,6 +38,20 @@ void kvm_init(pte_t *kp) {
 
   // map uart
   pte_map(kp, NS16550_BASE_ADDR, NS16550_BASE_ADDR, PTE_RW_SET, PTE_PAGE_4K);
+#endif
+
+#ifdef K210
+  // map k210 debug uarths
+  pte_map(kp, (void*)UARTHS_BASE_ADDR, (void*)UARTHS_BASE_ADDR, PTE_RW_SET, PTE_PAGE_4K);
+
+  pte_range_map(kp, (void*)FPIOA_BASE_ADDR, (void*)FPIOA_BASE_ADDR, PTE_RW_SET, 0x10000);
+
+  pte_range_map(kp, (void*)SYSCTL_BASE_ADDR, (void*)SYSCTL_BASE_ADDR, PTE_RW_SET, 0x10000);
+
+  pte_range_map(kp, (void*)SPI0_BASE_ADDR, (void*)SPI0_BASE_ADDR, PTE_RW_SET, 0x1000000);
+
+  pte_map(kp, (void*)GPIOHS_BASE_ADDR, (void*)GPIOHS_BASE_ADDR, PTE_RW_SET, PTE_PAGE_4K);
+
 #endif
 
   

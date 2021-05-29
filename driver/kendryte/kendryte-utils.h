@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "../kernel/earlylog.h"
 #endif /* __cplusplus */
 
 #ifdef __cplusplus

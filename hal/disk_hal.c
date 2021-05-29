@@ -42,25 +42,41 @@ bool disk_hal_destory(struct disk_hal *disk) {
 
 #endif // QEMU
 
+#ifdef K210
 
-#ifdef K210 
+#include "../driver/kendryte/fpioa.h"
+#include "../driver/sdcard.h"
 
 struct disk_hal *disk_hal_init() {
-  KERNEL_PANIC();
-  return NULL;
-}
-bool disk_hal_read(struct disk_hal *disk, uint64_t sector, void *buf) {
-  KERNEL_PANIC();
-  return false;
+  struct disk_hal *disk = kmalloc(sizeof(struct disk_hal));
+  disk->ops.read_op = disk_hal_read;
+  disk->ops.write_op = disk_hal_write;
+
+  // init the fpio config
+  fpioa_set_function(27, FUNC_SPI0_SCLK);
+  fpioa_set_function(28, FUNC_SPI0_D0);
+  fpioa_set_function(26, FUNC_SPI0_D1);
+  fpioa_set_function(32, FUNC_GPIOHS7);
+  fpioa_set_function(29, FUNC_SPI0_SS3);
+
+  sdcard_init();
+  return disk;
 }
 
-bool disk_hal_write(struct disk_hal *disk, uint64_t sector, void *buf) {
-  KERNEL_PANIC();
-  return false;
+bool disk_hal_read(struct disk_hal *params, uint64_t sector, void *buf) {
+  sdcard_read_sector(buf, sector);
+  return true;
+}
+
+bool disk_hal_write(struct disk_hal *params, uint64_t sector, void *buf) {
+  sdcard_write_sector(buf, sector);
+  return true;
 }
 
 bool disk_hal_destory(struct disk_hal *disk) {
   KERNEL_PANIC();
 }
-
 #endif
+
+
+

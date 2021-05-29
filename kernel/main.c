@@ -38,7 +38,7 @@ int main(uint64_t hartid) {
     w_stvec((uint64_t)kvec_asm);
     s_sstatus(SSTATUS_SIE);
     s_sie(SIE_SSIE | SIE_STIE);
-    uart_init();
+    uart_hal_init();
     klog_init();
 
     printf("hart %d enter main()...\n", hartid);
