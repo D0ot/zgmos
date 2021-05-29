@@ -192,6 +192,8 @@ struct task_struct{
   // program brk
   void *brk;
 
+  // cwd
+  struct vnode *cwd;
 
 };
 

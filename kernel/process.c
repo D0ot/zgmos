@@ -276,6 +276,9 @@ struct task_struct *task_create(struct vnode *image, struct task_struct *parent)
   
   pmem_free(phdr);
   kfree(ehdr);
+
+  task->cwd = vfs_root(fs.vfs);
+
   return task;
 
 in_load_fail:

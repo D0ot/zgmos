@@ -35,6 +35,8 @@ int syscall() {
       return syscall_read();
     case SYS_write:
       return syscall_write();
+    case SYS_openat:
+      return syscall_openat();
     default:
       return -1;
   }
@@ -87,6 +89,34 @@ int syscall_exit() {
   return 0;
 }
 
+#define AT_FDCWD (-100)
+
+int syscall_openat() {
+  struct task_struct *task = task_get_current();
+  char *fn = syscall_arg_ptr(1);
+  char *pa = pte_walk(task->user_pte, fn, NULL, NULL) + (ALL_ONE_MASK(12) & (uint64_t)fn);
+  int dirfd = syscall_arg_fd(0);
+  int fd = -1;
+  if(pa[0] == '/') {
+    fd = files_struct_alloc(task->files, NULL, pa + 1);
+  } else {
+    if(dirfd == AT_FDCWD) {
+      fd = files_struct_alloc(task->files, task->cwd, pa); 
+    } else {
+      if(files_struct_check(task->files, dirfd)) {
+        struct vnode *node = files_struct_get(task->files, dirfd);
+        if(node->type != VNODE_DIR && node->type != VNODE_MP) {
+          fd = 1;
+        }else {
+          fd = files_struct_alloc(task->files, node, pa);
+        }
+      } else {
+        fd = -1;
+      }
+    }
+  }
+  return fd;
+}
 
 int syscall_read() {
   int fd = syscall_arg_fd(0);

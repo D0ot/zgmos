@@ -30,6 +30,8 @@ SYSCALL_GET_ARG_FUNC_DEC(size_t, size);
 #define SYS_mount         (40)
 #define SYS_chdir         (49)
 #define SYS_openat        (56)
+int syscall_openat();
+
 #define SYS_pipe2         (59)
 #define SYS_close         (57)
 #define SYS_getdents64    (61)

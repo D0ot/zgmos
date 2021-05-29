@@ -58,18 +58,15 @@ int main(uint64_t hartid) {
     task_init();
     struct vfs_t *vfs = fs.vfs;
 
-    struct vnode *image = vfs_get_recursive(vfs, NULL, "testcase/test1");
+    struct vnode *image = vfs_get_recursive(vfs, NULL, "read");
     struct task_struct *task = task_create(image, NULL);
 
-    struct vnode *image2 = vfs_get_recursive(vfs, NULL, "testcase/write");
-    struct task_struct *task2 = task_create(image2, NULL);
 
 
     pte_debug_print(task->user_pte);
     
     scheduler_init();
-    // scheduler_add(task);
-    scheduler_add(task2);
+    scheduler_add(task);
     scheduler_run();
 
     while(1);
@@ -92,7 +89,6 @@ int main(uint64_t hartid) {
     kvm_install(kpte);
     printf("hart 1 init done\n");
   }
-
   
   while(1) {
     LOG_INFO("hello from hart, id = %l", get_hartid());
