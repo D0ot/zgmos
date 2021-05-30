@@ -37,6 +37,8 @@ int syscall() {
       return syscall_write();
     case SYS_openat:
       return syscall_openat();
+    case SYS_chdir:
+      return syscall_chdir();
     default:
       return -1;
   }
@@ -89,8 +91,26 @@ int syscall_exit() {
   return 0;
 }
 
-#define AT_FDCWD (-100)
+int syscall_chdir() {
+  struct task_struct *task = task_get_current();
+  char *fn = syscall_arg_ptr(0);
+  char *pa = pte_walk(task->user_pte, fn, NULL, NULL) + (ALL_ONE_MASK(12) & (uint64_t)fn);
+  struct vnode *node;
+  if(pa[0] == '/') {
+    node = vfs_open(fs.vfs, NULL, pa + 1);
+  }else {
+    node = vfs_open(fs.vfs, task->cwd, pa);
+  }
 
+  if(node && (node->type == VNODE_DIR || node->type == VNODE_MP)) {
+    task->cwd = node;
+    return 0;
+  }else {
+    return -1;
+  }
+}
+
+#define AT_FDCWD (-100)
 int syscall_openat() {
   struct task_struct *task = task_get_current();
   char *fn = syscall_arg_ptr(1);

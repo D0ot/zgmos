@@ -29,6 +29,7 @@ SYSCALL_GET_ARG_FUNC_DEC(size_t, size);
 #define SYS_umount2       (39)
 #define SYS_mount         (40)
 #define SYS_chdir         (49)
+int syscall_chdir();
 #define SYS_openat        (56)
 int syscall_openat();
 
