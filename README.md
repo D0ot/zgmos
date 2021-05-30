@@ -1,5 +1,7 @@
 # ZGM-OS Project
 
+## the DOC is in the ./doc directory
+
 ## How to compile
 
 ### To compile ZGM-OS
@@ -22,8 +24,8 @@ see more usages in Makefile
 
 ## Debug Guide
 
-1. `make qemu-build`
-2. `make qemung-debug`
+1. `make qemu-build` or `make k210-build`
+2. `make qemung-debug` or `make k210-debug`
 3. `make gdb`
 
 
