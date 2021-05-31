@@ -306,6 +306,14 @@ after_none:
   
 }
 
+struct task_struct *task_clone(struct task_struct *parent) {
+  if(!parent) {
+    return NULL;
+  }
+  return NULL;
+}
+
+
 void task_exit(struct task_struct *task) {
   task_remove_all_page(task);
   pmem_free(task->ustack_pa);

@@ -32,6 +32,18 @@ struct files_struct *files_struct_create() {
   return files;
 }
 
+struct files_struct *files_struct_clone(struct files_struct *files) {
+  struct files_struct *newfiles = kmalloc(sizeof(struct files_struct));
+  newfiles->nodes = pmem_alloc(1);
+  newfiles->seek = (void*)files->nodes + PAGE_SIZE;
+  newfiles->size = (PAGE_SIZE * POWER_OF_2(0)) / sizeof(struct vnode*);
+  for(int i = 0; i < files->size; ++i) {
+    newfiles->nodes[i] = files->nodes[i];
+    newfiles->seek[i] = files->seek[i];
+  }
+  return newfiles;
+}
+
 int files_struct_alloc(struct files_struct *files, struct vnode *parent, const char *path) {
   int ret = -1;
   for(int i = 0; i < files->size; ++i) {

@@ -12,6 +12,7 @@ struct files_struct {
 
 
 struct files_struct *files_struct_create();
+struct files_struct *files_struct_clone(struct files_struct *files);
 int files_struct_alloc(struct files_struct *files, struct vnode *parent, const char *path);
 bool files_struct_check(struct files_struct *files, int fd);
 void files_struct_free(struct files_struct *files, int fd);

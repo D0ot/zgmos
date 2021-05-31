@@ -202,6 +202,8 @@ void task_init();
 
 struct task_struct *task_create(struct vnode *image, struct task_struct *parent);
 
+struct task_struct *task_clone(struct task_struct *parent);
+
 // it is called when process exit
 void task_exit(struct task_struct *task);
 
