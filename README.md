@@ -1,9 +1,5 @@
 # ZGM-OS Project
 
-
-## the DOC is in the ./doc directory
-## 原始提交文档与补充文档均放在 doc 文件夹中
-
 ## How to compile
 
 ### To compile ZGM-OS
